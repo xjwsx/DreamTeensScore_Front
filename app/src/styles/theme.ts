@@ -1,36 +1,31 @@
-// iOS 네이티브 스타일 디자인 토큰
+// 청량 아쿠아 디자인 토큰
 export const theme = {
   colors: {
-    background: "#F2F2F7", // iOS 그룹 배경
-    surface: "#FFFFFF",
-    primary: "#007AFF", // iOS 블루
-    success: "#34C759", // 가점 그린
-    danger: "#FF3B30", // 감점 레드
-    text: "#000000",
-    textSecondary: "#8E8E93",
-    separator: "#C6C6C8",
-    // 순위 강조
-    gold: "#FFD60A",
-    silver: "#C7C7CC",
-    bronze: "#D9A066",
+    ink: "#0e4b63",
+    text: "#ffffff",
+    screenGradient: "linear-gradient(165deg,#0ea5e9 0%,#22d3ee 45%,#2dd4bf 100%)",
+    sky: "#0ea5e9",
+    cyan: "#22d3ee",
+    teal: "#2dd4bf",
+    amber: "#fbbf24",
+    rose: "#fb7185",
+    cta: "#0e7490", // 흰 버튼 위 텍스트
+    gold: "#fbbf24",
+    silver: "#cbd5e1",
+    bronze: "#fb923c",
   },
-  radius: {
-    sm: "10px",
-    md: "14px",
-    lg: "20px",
-    pill: "999px",
+  glass: {
+    strong: "linear-gradient(160deg,rgba(255,255,255,.30),rgba(150,235,255,.12))",
+    medium: "linear-gradient(160deg,rgba(255,255,255,.24),rgba(150,235,255,.10))",
+    soft: "linear-gradient(160deg,rgba(255,255,255,.18),rgba(150,235,255,.06))",
+    border: "1px solid rgba(255,255,255,.45)",
+    borderSoft: "1px solid rgba(255,255,255,.3)",
+    insetHi: "inset 0 1px 0 rgba(255,255,255,.5)",
   },
-  spacing: (n: number) => `${n * 4}px`,
+  radius: { sm: "14px", md: "20px", lg: "24px", pill: "999px" },
   font: {
-    family:
-      '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif',
-    largeTitle: "34px",
-    title: "20px",
-    body: "17px",
-    caption: "13px",
-  },
-  shadow: {
-    card: "0 1px 3px rgba(0,0,0,0.08)",
+    body: "'Pretendard',system-ui,-apple-system,sans-serif",
+    display: "'Pretendard',system-ui,sans-serif",
   },
 } as const;
 

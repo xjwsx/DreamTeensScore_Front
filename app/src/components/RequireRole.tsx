@@ -4,9 +4,11 @@ import { useAuth } from "@/context/AuthContext";
 import type { SessionRole } from "@/lib/auth";
 
 export function RequireRole({ roles, children }: { roles: SessionRole[]; children: ReactNode }) {
-  const { session, ready } = useAuth();
+  const { role, ready } = useAuth();
   if (!ready) return null;
-  if (!session) return <Navigate to="/login" replace />;
-  if (!roles.includes(session.role)) return <Navigate to="/board" replace />;
+  if (!roles.includes(role)) {
+    // 게스트(viewer)는 로그인 화면으로, 로그인했지만 권한이 부족하면 순위판으로.
+    return <Navigate to={role === "viewer" ? "/login" : "/board"} replace />;
+  }
   return <>{children}</>;
 }

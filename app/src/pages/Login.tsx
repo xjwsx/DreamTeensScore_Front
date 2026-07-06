@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { Trophy, User, KeyRound, ArrowRight, Eye } from "lucide-react";
 import { Screen, Blob, Content, WhiteButton, GhostButton } from "@/components/ui";
-import { useAuth } from "@/context/AuthContext";
-import { login, viewerSession } from "@/lib/auth";
+import { login } from "@/lib/auth";
 
 const Center = styled.div` flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 28px; `;
 const Logo = styled.div`
@@ -30,7 +29,6 @@ const ErrorText = styled.div` font-size: 13px; color: #fff3b0; text-align: cente
 
 export default function Login() {
   const nav = useNavigate();
-  const { setSession } = useAuth();
   const [loginId, setLoginId] = useState("");
   const [pw, setPw] = useState("");
   const [error, setError] = useState("");
@@ -40,8 +38,7 @@ export default function Login() {
     if (busy) return;
     setError(""); setBusy(true);
     try {
-      const s = await login(loginId, pw);
-      setSession(s);
+      await login(loginId, pw);
       nav("/board", { replace: true });
     } catch (e) {
       setError(e instanceof Error ? e.message : "로그인에 실패했습니다.");
@@ -50,7 +47,6 @@ export default function Login() {
     }
   }
   function enterViewer() {
-    setSession(viewerSession());
     nav("/board", { replace: true });
   }
 

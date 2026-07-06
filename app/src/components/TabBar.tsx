@@ -28,8 +28,7 @@ const TABS: TabDef[] = [
 export function TabBar() {
   const nav = useNavigate();
   const { pathname } = useLocation();
-  const { session } = useAuth();
-  const role: SessionRole = session?.role ?? "viewer";
+  const { role } = useAuth();
   const tabs = TABS.filter((t) => t.roles.includes(role));
 
   return (

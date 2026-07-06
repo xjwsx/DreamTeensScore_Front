@@ -37,7 +37,7 @@ const Empty = styled(Glass)` padding: 28px 20px; text-align: center; color: rgba
 export default function Input() {
   const { teams } = useTeams();
   const { games } = useGames();
-  const { session } = useAuth();
+  const { userId } = useAuth();
   const [gameId, setGameId] = useState<string | null>(null);
   const [unit, setUnit] = useState<number>(5);
   const [custom, setCustom] = useState(false);
@@ -45,7 +45,7 @@ export default function Input() {
 
   const activeGameId = gameId ?? games[0]?.id ?? null;
   const effectiveUnit = custom ? Number(customVal) || 0 : unit;
-  const createdBy = session && session.role !== "viewer" ? session.userId : null;
+  const createdBy = userId;
 
   async function give(teamId: string, sign: 1 | -1) {
     if (effectiveUnit === 0) return;

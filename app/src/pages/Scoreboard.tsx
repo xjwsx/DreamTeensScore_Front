@@ -46,7 +46,7 @@ export default function Scoreboard() {
         </List>
       )}
 
-      <Logout onClick={() => { logout(); nav("/login", { replace: true }); }}>
+      <Logout onClick={() => { void logout(); nav("/login", { replace: true }); }}>
         <LogOut size={15} /> 로그아웃
       </Logout>
     </>

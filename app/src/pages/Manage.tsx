@@ -1,6 +1,6 @@
 import { useState } from "react";
 import styled from "styled-components";
-import { Plus, X, RotateCcw } from "lucide-react";
+import { Plus, X, RotateCcw, Check } from "lucide-react";
 import { useTeams } from "@/hooks/useTeams";
 import { useGames } from "@/hooks/useGames";
 import {
@@ -26,9 +26,10 @@ const NameInput = styled.input`
   flex: 1; min-width: 0; border: 1px solid rgba(255,255,255,.3); border-radius: 12px;
   padding: 11px 13px; background: rgba(255,255,255,.12); color: #fff; font-size: 15px; font-weight: 600;
 `;
-const DelBtn = styled.button`
+const DelBtn = styled.button<{ $armed?: boolean }>`
   width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.14);
+  display: flex; align-items: center; justify-content: center;
+  background: ${({ $armed }) => ($armed ? "#ef4444" : "rgba(255,255,255,.14)")};
 `;
 const Palette = styled.div` display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; `;
 const Swatch = styled.button<{ $c: string; $on?: boolean }>`
@@ -50,6 +51,7 @@ export default function Manage() {
   const { teams } = useTeams();
   const { games } = useGames();
   const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   async function addTeam() {
     const n = teams.length;
@@ -63,6 +65,14 @@ export default function Manage() {
     await resetAll();
     setConfirmReset(false);
   }
+  function armOrDelete(id: string, del: (id: string) => Promise<void>) {
+    if (confirmDelete === id) {
+      void del(id);
+      setConfirmDelete(null);
+    } else {
+      setConfirmDelete(id);
+    }
+  }
 
   return (
     <>
@@ -75,7 +85,9 @@ export default function Manage() {
           <Row>
             <EmojiBtn onClick={() => void updateTeam(t.id, { emoji: nextIn(TEAM_EMOJIS, t.emoji) })}>{t.emoji}</EmojiBtn>
             <NameInput defaultValue={t.name} onBlur={(e) => { if (e.target.value !== t.name) void updateTeam(t.id, { name: e.target.value }); }} />
-            <DelBtn onClick={() => void deleteTeam(t.id)}><X size={18} color="#fff" /></DelBtn>
+            <DelBtn $armed={confirmDelete === t.id} onClick={() => armOrDelete(t.id, deleteTeam)}>
+              {confirmDelete === t.id ? <Check size={18} color="#fff" /> : <X size={18} color="#fff" />}
+            </DelBtn>
           </Row>
           <Palette>
             {TEAM_COLORS.map((c) => (
@@ -94,7 +106,9 @@ export default function Manage() {
           <Row>
             <EmojiBtn onClick={() => void updateGame(g.id, { emoji: nextIn(GAME_EMOJIS, g.emoji) })}>{g.emoji}</EmojiBtn>
             <NameInput defaultValue={g.name} onBlur={(e) => { if (e.target.value !== g.name) void updateGame(g.id, { name: e.target.value }); }} />
-            <DelBtn onClick={() => void deleteGame(g.id)}><X size={18} color="#fff" /></DelBtn>
+            <DelBtn $armed={confirmDelete === g.id} onClick={() => armOrDelete(g.id, deleteGame)}>
+              {confirmDelete === g.id ? <Check size={18} color="#fff" /> : <X size={18} color="#fff" />}
+            </DelBtn>
           </Row>
         </Card>
       ))}

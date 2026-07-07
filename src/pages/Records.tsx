@@ -8,8 +8,14 @@ import { Glass } from "@/components/ui";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
 const Title = styled.div` font-size: 26px; font-weight: 800; margin-bottom: 16px; `;
+const Grid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  @media (min-width: 768px) { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+`;
 const Card = styled(Glass)<{ $void?: boolean }>`
-  display: flex; align-items: center; gap: 12px; padding: 13px 16px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 12px; padding: 13px 16px;
   opacity: ${({ $void }) => ($void ? 0.45 : 1)};
 `;
 const Delta = styled.div<{ $neg?: boolean }>`
@@ -46,7 +52,8 @@ export default function Records() {
           <div style={{ fontSize: 13, color: "rgba(255,255,255,.7)", marginTop: 4 }}>점수를 입력하면 여기에 남습니다.</div>
         </Empty>
       ) : (
-        entries.map((e) => {
+        <Grid>
+          {entries.map((e) => {
           const inactive = e.voided || e.archivedAt !== null;
           return (
             <Card key={e.id} $variant="soft" $void={inactive}>
@@ -64,7 +71,8 @@ export default function Records() {
               )}
             </Card>
           );
-        })
+          })}
+        </Grid>
       )}
     </>
   );

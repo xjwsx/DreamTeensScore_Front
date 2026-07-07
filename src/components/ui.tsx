@@ -23,8 +23,9 @@ export const Blob = styled.div<{ $size: number; $top: string; $left: string; $bg
   filter: blur(2px);
 `;
 
-/** 콘텐츠 레이어 (블롭 위) — 반응형 폭으로 가운데 정렬 */
-export const Content = styled.div<{ $pad?: string }>`
+/** 콘텐츠 레이어 (블롭 위) — 반응형 폭으로 가운데 정렬.
+ *  $maxWidth 로 넓은 화면(≥768px)의 폭을 화면별로 넓힐 수 있다(기본 560px). */
+export const Content = styled.div<{ $pad?: string; $maxWidth?: string }>`
   position: relative;
   z-index: 1;
   width: 100%;
@@ -36,7 +37,7 @@ export const Content = styled.div<{ $pad?: string }>`
   min-height: 100dvh;
 
   @media (min-width: 768px) {
-    max-width: 560px;
+    max-width: ${({ $maxWidth }) => $maxWidth ?? "560px"};
   }
 `;
 

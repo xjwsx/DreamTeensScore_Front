@@ -46,7 +46,13 @@ const CustomInput = styled.input`
   width: 74px; padding: 11px 12px; border-radius: 999px; font-size: 14px; font-weight: 700; text-align: center;
   color: #0e7490; background: #fff; border: none;
 `;
-const TeamCard = styled(Glass)` display: flex; align-items: center; gap: 14px; padding: 16px; margin-bottom: 12px; `;
+const TeamGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  @media (min-width: 768px) { grid-template-columns: repeat(2, 1fr); }
+`;
+const TeamCard = styled(Glass)` display: flex; align-items: center; gap: 14px; padding: 16px; `;
 const Emoji = styled.div`
   width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
   font-size: 26px; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.3);
@@ -194,17 +200,19 @@ export default function Input() {
         )}
       </ChipRow>
 
-      {orderedTeams.map((t) => (
-        <TeamCard key={t.id} $variant="medium">
-          <Emoji>{t.emoji}</Emoji>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 700 }}>{t.name}</div>
-            <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'Pretendard',sans-serif" }}>{t.totalScore}</div>
-          </div>
-          <Step disabled={busy[t.id]} onClick={() => void give(t.id, -1)}><Minus size={22} color="#fff" /></Step>
-          <Step $bg={t.color} disabled={busy[t.id]} onClick={() => void give(t.id, 1)}><Plus size={22} color="#fff" /></Step>
-        </TeamCard>
-      ))}
+      <TeamGrid>
+        {orderedTeams.map((t) => (
+          <TeamCard key={t.id} $variant="medium">
+            <Emoji>{t.emoji}</Emoji>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>{t.name}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'Pretendard',sans-serif" }}>{t.totalScore}</div>
+            </div>
+            <Step disabled={busy[t.id]} onClick={() => void give(t.id, -1)}><Minus size={22} color="#fff" /></Step>
+            <Step $bg={t.color} disabled={busy[t.id]} onClick={() => void give(t.id, 1)}><Plus size={22} color="#fff" /></Step>
+          </TeamCard>
+        ))}
+      </TeamGrid>
     </>
   );
 }

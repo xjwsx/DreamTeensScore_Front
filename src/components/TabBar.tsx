@@ -6,6 +6,7 @@ import type { SessionRole } from "@/lib/auth";
 
 const Bar = styled.div`
   margin-top: auto; display: flex; align-items: center; gap: 8px;
+  align-self: center; width: 100%; max-width: 480px;
   background: ${({ theme }) => theme.glass.strong};
   border: ${({ theme }) => theme.glass.border};
   border-radius: 26px; padding: 10px;

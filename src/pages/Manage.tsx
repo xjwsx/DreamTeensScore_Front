@@ -19,7 +19,14 @@ const AddBtn = styled.button`
   display: flex; align-items: center; gap: 5px; padding: 9px 13px; border-radius: 14px;
   background: #fff; color: #0e7490; font-weight: 700; font-size: 13.5px;
 `;
-const Card = styled(Glass)<{ $off?: boolean }>` padding: 14px; margin-bottom: 10px; opacity: ${({ $off }) => ($off ? 0.55 : 1)}; `;
+const CardGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+  @media (min-width: 768px) { grid-template-columns: repeat(2, 1fr); }
+`;
+const Card = styled(Glass)<{ $off?: boolean }>` padding: 14px; opacity: ${({ $off }) => ($off ? 0.55 : 1)}; `;
 const Row = styled.div` display: flex; align-items: center; gap: 10px; `;
 const EmojiBtn = styled.button`
   width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0; font-size: 24px;
@@ -147,6 +154,7 @@ export default function Manage() {
         <SectionTitle>👥 팀</SectionTitle>
         <AddBtn onClick={() => void addTeam()}><Plus size={15} /> 팀 추가</AddBtn>
       </Section>
+      <CardGrid>
       {teams.map((t) => (
         <Card key={t.id} $variant="medium" $off={!t.active}>
           <Row>
@@ -164,11 +172,13 @@ export default function Manage() {
           </Palette>
         </Card>
       ))}
+      </CardGrid>
 
       <Section style={{ marginTop: 22 }}>
         <SectionTitle>🎮 게임</SectionTitle>
         <AddBtn onClick={() => void addGame()}><Plus size={15} /> 게임 추가</AddBtn>
       </Section>
+      <CardGrid>
       {games.map((g) => (
         <Card key={g.id} $variant="medium" $off={!g.active}>
           <Row>
@@ -181,6 +191,7 @@ export default function Manage() {
           </Row>
         </Card>
       ))}
+      </CardGrid>
 
       <Reset onClick={() => void doReset()}>
         <RotateCcw size={16} /> {confirmReset ? "한 번 더 탭하면 전체 초기화 (기록은 보관됩니다)" : "전체 점수 · 기록 초기화"}

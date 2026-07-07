@@ -11,6 +11,7 @@ import {
 import { TEAM_COLORS, TEAM_EMOJIS, GAME_EMOJIS } from "@/lib/constants";
 import { Glass } from "@/components/ui";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { Toast, useToast } from "@/components/Toast";
 
 const Section = styled.div` display: flex; align-items: center; justify-content: space-between; margin: 6px 0 12px; `;
 const SectionTitle = styled.div` font-size: 17px; font-weight: 800; `;
@@ -45,7 +46,6 @@ const Swatch = styled.button<{ $c: string; $on?: boolean }>`
   width: 28px; height: 28px; border-radius: 50%; background: ${({ $c }) => $c};
   border: ${({ $on }) => ($on ? "3px solid #fff" : "2px solid rgba(255,255,255,.4)")};
 `;
-const Note = styled.div` font-size: 12px; color: #ffd7de; margin-top: 8px; `;
 const Reset = styled.button`
   width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px;
   margin: 8px 0 4px; padding: 15px; border-radius: 16px; font-size: 14px; font-weight: 700;
@@ -72,10 +72,9 @@ export default function Manage() {
   const { teams, loading: teamsLoading } = useTeams();
   const { games, loading: gamesLoading } = useGames();
   const { userId, name } = useAuth();
+  const { toast, notify } = useToast();
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [blockedId, setBlockedId] = useState<string | null>(null);
-  const [resetMsg, setResetMsg] = useState<string | null>(null);
   const [canUndo, setCanUndo] = useState(false);
   const [lastReset, setLastReset] = useState<ResetInfo | null>(null);
 
@@ -83,38 +82,56 @@ export default function Manage() {
 
   async function addTeam() {
     const n = teams.length;
-    await createTeam(`${n + 1}팀`, TEAM_EMOJIS[n % TEAM_EMOJIS.length], TEAM_COLORS[n % TEAM_COLORS.length]);
+    try {
+      await createTeam(`${n + 1}팀`, TEAM_EMOJIS[n % TEAM_EMOJIS.length], TEAM_COLORS[n % TEAM_COLORS.length]);
+      notify(`${n + 1}팀을 추가했어요`);
+    } catch {
+      notify("팀 추가에 실패했어요", true);
+    }
   }
   async function addGame() {
-    await createGame("새 게임", GAME_EMOJIS[games.length % GAME_EMOJIS.length]);
+    try {
+      await createGame("새 게임", GAME_EMOJIS[games.length % GAME_EMOJIS.length]);
+      notify("게임을 추가했어요");
+    } catch {
+      notify("게임 추가에 실패했어요", true);
+    }
   }
 
   async function doReset() {
     if (!confirmReset) { setConfirmReset(true); return; }
     setConfirmReset(false);
-    const n = await resetAll(userId, name);
-    setResetMsg(`${n}개 기록을 보관했어요 (총점 0)`);
-    setCanUndo(true);
-    void lastResetInfo().then(setLastReset);
+    try {
+      const n = await resetAll(userId, name);
+      notify(`${n}개 기록을 보관했어요 (총점 0)`);
+      setCanUndo(true);
+      void lastResetInfo().then(setLastReset);
+    } catch {
+      notify("초기화에 실패했어요", true);
+    }
   }
   async function doUndo() {
-    const n = await restoreLastReset(userId);
-    setResetMsg(n > 0 ? `${n}개 기록을 되돌렸어요` : "되돌릴 기록이 없어요");
-    setCanUndo(false);
-    void lastResetInfo().then(setLastReset);
+    try {
+      const n = await restoreLastReset(userId);
+      notify(n > 0 ? `${n}개 기록을 되돌렸어요` : "되돌릴 기록이 없어요");
+      setCanUndo(false);
+      void lastResetInfo().then(setLastReset);
+    } catch {
+      notify("되돌리기에 실패했어요", true);
+    }
   }
 
   async function armOrDelete(id: string, kind: "team" | "game") {
-    setBlockedId(null);
     if (confirmDelete === id) {
       try {
         if (kind === "team") await deleteTeam(id, userId);
         else await deleteGame(id, userId);
         setConfirmDelete(null);
+        notify(kind === "team" ? "팀을 삭제했어요" : "게임을 삭제했어요");
       } catch {
-        // on delete restrict 위반 등 — 기록이 연결된 경우
+        // on delete restrict 위반 등 — 점수 기록이 연결된 경우
         setConfirmDelete(null);
-        setBlockedId(id);
+        notify("점수 기록이 있어 삭제할 수 없어요 — 대신 비활성화하세요", true);
       }
       return;
     }
@@ -125,6 +142,7 @@ export default function Manage() {
 
   return (
     <>
+      <Toast toast={toast} />
       <Section>
         <SectionTitle>👥 팀</SectionTitle>
         <AddBtn onClick={() => void addTeam()}><Plus size={15} /> 팀 추가</AddBtn>
@@ -134,12 +152,11 @@ export default function Manage() {
           <Row>
             <EmojiBtn onClick={() => void updateTeam(t.id, { emoji: nextIn(TEAM_EMOJIS, t.emoji) })}>{t.emoji}</EmojiBtn>
             <NameInput defaultValue={t.name} onBlur={(e) => { if (e.target.value !== t.name) void updateTeam(t.id, { name: e.target.value }); }} />
-            <Switch $on={t.active} title={t.active ? "활성" : "비활성"} onClick={() => { setBlockedId(null); void setTeamActive(t.id, !t.active, userId); }}><span /></Switch>
+            <Switch $on={t.active} title={t.active ? "활성" : "비활성"} onClick={() => void setTeamActive(t.id, !t.active, userId)}><span /></Switch>
             <DelBtn $armed={confirmDelete === t.id} onClick={() => void armOrDelete(t.id, "team")}>
               {confirmDelete === t.id ? <Check size={18} color="#fff" /> : <X size={18} color="#fff" />}
             </DelBtn>
           </Row>
-          {blockedId === t.id && <Note>점수 기록이 있어 삭제할 수 없어요. 대신 스위치를 꺼서 비활성화하세요.</Note>}
           <Palette>
             {TEAM_COLORS.map((c) => (
               <Swatch key={c} $c={c} $on={c === t.color} onClick={() => void updateTeam(t.id, { color: c })} />
@@ -157,22 +174,21 @@ export default function Manage() {
           <Row>
             <EmojiBtn onClick={() => void updateGame(g.id, { emoji: nextIn(GAME_EMOJIS, g.emoji) })}>{g.emoji}</EmojiBtn>
             <NameInput defaultValue={g.name} onBlur={(e) => { if (e.target.value !== g.name) void updateGame(g.id, { name: e.target.value }); }} />
-            <Switch $on={g.active} title={g.active ? "활성" : "비활성"} onClick={() => { setBlockedId(null); void setGameActive(g.id, !g.active, userId); }}><span /></Switch>
+            <Switch $on={g.active} title={g.active ? "활성" : "비활성"} onClick={() => void setGameActive(g.id, !g.active, userId)}><span /></Switch>
             <DelBtn $armed={confirmDelete === g.id} onClick={() => void armOrDelete(g.id, "game")}>
               {confirmDelete === g.id ? <Check size={18} color="#fff" /> : <X size={18} color="#fff" />}
             </DelBtn>
           </Row>
-          {blockedId === g.id && <Note>점수 기록이 있어 삭제할 수 없어요. 대신 스위치를 꺼서 비활성화하세요.</Note>}
         </Card>
       ))}
 
       <Reset onClick={() => void doReset()}>
         <RotateCcw size={16} /> {confirmReset ? "한 번 더 탭하면 전체 초기화 (기록은 보관됩니다)" : "전체 점수 · 기록 초기화"}
       </Reset>
-      {resetMsg && (
+      {canUndo && (
         <ResetRow>
-          <span>{resetMsg}</span>
-          {canUndo && <UndoBtn onClick={() => void doUndo()}><Undo2 size={13} /> 되돌리기</UndoBtn>}
+          <span>초기화됨 — 되돌릴 수 있어요</span>
+          <UndoBtn onClick={() => void doUndo()}><Undo2 size={13} /> 되돌리기</UndoBtn>
         </ResetRow>
       )}
       {lastReset && <AuditLine>마지막 초기화: {fmt(lastReset.at)} · {lastReset.by ?? "?"}</AuditLine>}

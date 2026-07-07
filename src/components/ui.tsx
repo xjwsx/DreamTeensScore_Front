@@ -1,12 +1,10 @@
 import styled from "styled-components";
 
-/** 모바일 화면 컨테이너 — 브랜드 그래디언트 배경 + 부드러운 블롭 */
+/** 화면 컨테이너 — 브랜드 그래디언트를 뷰포트 전체로 풀블리드(넓은 화면의 어두운 여백 제거) */
 export const Screen = styled.div`
   position: relative;
   min-height: 100dvh;
   width: 100%;
-  max-width: 480px;
-  margin: 0 auto;
   overflow: hidden;
   background: ${({ theme }) => theme.colors.screenGradient};
   color: ${({ theme }) => theme.colors.text};
@@ -25,14 +23,21 @@ export const Blob = styled.div<{ $size: number; $top: string; $left: string; $bg
   filter: blur(2px);
 `;
 
-/** 콘텐츠 레이어 (블롭 위) */
+/** 콘텐츠 레이어 (블롭 위) — 반응형 폭으로 가운데 정렬 */
 export const Content = styled.div<{ $pad?: string }>`
   position: relative;
   z-index: 1;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
   padding: ${({ $pad }) => $pad ?? "22px 24px 32px"};
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
+
+  @media (min-width: 768px) {
+    max-width: 560px;
+  }
 `;
 
 /** 글래스 카드 */

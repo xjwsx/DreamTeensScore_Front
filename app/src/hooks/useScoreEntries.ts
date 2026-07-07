@@ -11,7 +11,7 @@ export function useScoreEntries(limit = 100) {
     async function load() {
       const { data } = await supabase
         .from("score_entries")
-        .select("id, teamId:team_id, gameId:game_id, points, createdBy:created_by, createdAt:created_at, voided")
+        .select("id, teamId:team_id, gameId:game_id, points, createdBy:created_by, createdAt:created_at, voided, archivedAt:archived_at")
         .order("created_at", { ascending: false })
         .limit(limit);
       if (active && data) setEntries(data as unknown as ScoreEntry[]);

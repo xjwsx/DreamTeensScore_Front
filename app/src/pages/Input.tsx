@@ -43,7 +43,9 @@ export default function Input() {
   const [custom, setCustom] = useState(false);
   const [customVal, setCustomVal] = useState("3");
 
-  const activeGameId = gameId ?? games[0]?.id ?? null;
+  const activeTeams = teams.filter((t) => t.active);
+  const activeGames = games.filter((g) => g.active);
+  const activeGameId = gameId ?? activeGames[0]?.id ?? null;
   const effectiveUnit = custom ? Number(customVal) || 0 : unit;
   const createdBy = userId;
 
@@ -57,11 +59,11 @@ export default function Input() {
       <Title>점수 입력</Title>
 
       <Label>게임 선택</Label>
-      {games.length === 0 ? (
+      {activeGames.length === 0 ? (
         <Empty $variant="soft" style={{ marginBottom: 16 }}>게임이 없어요. 팀·게임 탭에서 추가하세요.</Empty>
       ) : (
         <ChipRow>
-          {games.map((g) => (
+          {activeGames.map((g) => (
             <Chip key={g.id} $on={g.id === activeGameId} onClick={() => setGameId(g.id)}>{g.emoji} {g.name}</Chip>
           ))}
         </ChipRow>
@@ -79,7 +81,7 @@ export default function Input() {
         )}
       </ChipRow>
 
-      {teams.map((t) => (
+      {activeTeams.map((t) => (
         <TeamCard key={t.id} $variant="medium">
           <Emoji>{t.emoji}</Emoji>
           <div style={{ flex: 1, minWidth: 0 }}>

@@ -11,7 +11,7 @@ export function useTeams() {
     async function load() {
       const { data } = await supabase
         .from("teams")
-        .select("id, name, emoji, color, totalScore:total_score")
+        .select("id, name, emoji, color, totalScore:total_score, active")
         .order("total_score", { ascending: false })
         .order("created_at", { ascending: true });
       if (active && data) setTeams(data as unknown as Team[]);

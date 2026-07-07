@@ -16,7 +16,8 @@ const List = styled.div` display: flex; flex-direction: column; gap: 14px; `;
 export default function Present() {
   const nav = useNavigate();
   const { teams } = useTeams();
-  const maxScore = teams.reduce((m, t) => Math.max(m, t.totalScore), 0);
+  const activeTeams = teams.filter((t) => t.active);
+  const maxScore = activeTeams.reduce((m, t) => Math.max(m, t.totalScore), 0);
 
   return (
     <Screen>
@@ -28,7 +29,7 @@ export default function Present() {
           <Exit onClick={() => nav("/board")}><X size={16} /> 나가기</Exit>
         </Header>
         <List>
-          {teams.map((t, i) => (
+          {activeTeams.map((t, i) => (
             <TeamRankRow key={t.id} team={t} rank={i + 1} maxScore={maxScore} big />
           ))}
         </List>

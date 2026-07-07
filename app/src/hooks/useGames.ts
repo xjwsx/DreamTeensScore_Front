@@ -11,7 +11,7 @@ export function useGames() {
     async function load() {
       const { data } = await supabase
         .from("games")
-        .select("id, name, emoji")
+        .select("id, name, emoji, active")
         .order("created_at", { ascending: true });
       if (active && data) setGames(data as unknown as Game[]);
       setLoading(false);

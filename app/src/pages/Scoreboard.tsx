@@ -24,7 +24,8 @@ export default function Scoreboard() {
   const nav = useNavigate();
   const { teams, loading } = useTeams();
   const { logout } = useAuth();
-  const maxScore = teams.reduce((m, t) => Math.max(m, t.totalScore), 0);
+  const activeTeams = teams.filter((t) => t.active);
+  const maxScore = activeTeams.reduce((m, t) => Math.max(m, t.totalScore), 0);
 
   return (
     <>
@@ -36,11 +37,11 @@ export default function Scoreboard() {
         <Pill onClick={() => nav("/present")}><Presentation size={16} /> 발표 모드</Pill>
       </Header>
 
-      {teams.length === 0 ? (
+      {activeTeams.length === 0 ? (
         <Empty $variant="soft">{loading ? "불러오는 중…" : "아직 팀이 없어요. 팀·게임 탭에서 추가하세요."}</Empty>
       ) : (
         <List>
-          {teams.map((t, i) => (
+          {activeTeams.map((t, i) => (
             <TeamRankRow key={t.id} team={t} rank={i + 1} maxScore={maxScore} />
           ))}
         </List>

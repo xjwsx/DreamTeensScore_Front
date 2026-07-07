@@ -43,20 +43,25 @@ export default function Records() {
           <div style={{ fontSize: 13, color: "rgba(255,255,255,.7)", marginTop: 4 }}>점수를 입력하면 여기에 남습니다.</div>
         </Empty>
       ) : (
-        entries.map((e) => (
-          <Card key={e.id} $variant="soft" $void={e.voided}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 14.5, fontWeight: 700 }}>{teamName(e.teamId)}</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,.65)" }}>{gameName(e.gameId)} · {hhmm(e.createdAt)}</div>
-            </div>
-            <Delta $neg={e.points < 0}>{e.points >= 0 ? `+${e.points}` : e.points}</Delta>
-            {e.voided ? (
-              <span style={{ marginLeft: "auto", fontSize: 12.5, color: "rgba(255,255,255,.6)" }}>취소됨</span>
-            ) : (
-              <UndoBtn onClick={() => void voidEntry(e.id)}><Undo2 size={14} /> 취소</UndoBtn>
-            )}
-          </Card>
-        ))
+        entries.map((e) => {
+          const inactive = e.voided || e.archivedAt !== null;
+          return (
+            <Card key={e.id} $variant="soft" $void={inactive}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 14.5, fontWeight: 700 }}>{teamName(e.teamId)}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,.65)" }}>{gameName(e.gameId)} · {hhmm(e.createdAt)}</div>
+              </div>
+              <Delta $neg={e.points < 0}>{e.points >= 0 ? `+${e.points}` : e.points}</Delta>
+              {e.archivedAt !== null ? (
+                <span style={{ marginLeft: "auto", fontSize: 12.5, color: "rgba(255,255,255,.6)" }}>보관됨</span>
+              ) : e.voided ? (
+                <span style={{ marginLeft: "auto", fontSize: 12.5, color: "rgba(255,255,255,.6)" }}>취소됨</span>
+              ) : (
+                <UndoBtn onClick={() => void voidEntry(e.id)}><Undo2 size={14} /> 취소</UndoBtn>
+              )}
+            </Card>
+          );
+        })
       )}
     </>
   );

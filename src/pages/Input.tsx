@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { Minus, Plus, Check, TriangleAlert, Undo2 } from "lucide-react";
 import { useTeams } from "@/hooks/useTeams";
@@ -77,22 +77,25 @@ interface Feedback {
   entryId?: string;
 }
 
-/** 데스크톱 마우스 휠(세로)을 가로 스크롤로 변환 — 스크롤바 없이도 칩 줄을 넘길 수 있게 */
+/**
+ * 데스크톱 마우스 휠(세로)을 가로 스크롤로 변환 — 스크롤바 없이도 칩 줄을 넘길 수 있게.
+ * 콜백 ref로 구현 — 조건부 렌더(데이터 로드 후 마운트)되는 줄에도 리스너가 확실히 붙는다.
+ */
 function useHorizontalWheel<T extends HTMLElement>() {
-  const ref = useRef<T>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+  const cleanupRef = useRef<(() => void) | null>(null);
+  return useCallback((node: T | null) => {
+    cleanupRef.current?.(); // 이전 노드 리스너 해제
+    cleanupRef.current = null;
+    if (!node) return;
     const onWheel = (e: WheelEvent) => {
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; // 트랙패드 가로 스크롤은 네이티브에 맡김
-      if (e.deltaY === 0 || el.scrollWidth <= el.clientWidth) return; // 넘길 게 없으면 페이지 스크롤 유지
+      if (e.deltaY === 0 || node.scrollWidth <= node.clientWidth) return; // 넘길 게 없으면 페이지 스크롤 유지
       e.preventDefault();
-      el.scrollLeft += e.deltaY;
+      node.scrollLeft += e.deltaY;
     };
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
+    node.addEventListener("wheel", onWheel, { passive: false });
+    cleanupRef.current = () => node.removeEventListener("wheel", onWheel);
   }, []);
-  return ref;
 }
 
 export default function Input() {

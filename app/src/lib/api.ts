@@ -2,11 +2,12 @@ import { supabase } from "@/lib/supabase";
 
 export async function addScore(
   teamId: string, gameId: string | null, points: number, createdBy: string | null
-): Promise<void> {
-  const { error } = await supabase.from("score_entries").insert({
+): Promise<string> {
+  const { data, error } = await supabase.from("score_entries").insert({
     team_id: teamId, game_id: gameId, points, created_by: createdBy, voided: false,
-  });
+  }).select("id").single();
   if (error) throw error;
+  return (data as { id: string }).id;
 }
 
 export async function voidEntry(id: string): Promise<void> {

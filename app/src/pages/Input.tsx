@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styled from "styled-components";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Check, TriangleAlert, Undo2 } from "lucide-react";
 import { useTeams } from "@/hooks/useTeams";
 import { useGames } from "@/hooks/useGames";
 import { useAuth } from "@/context/AuthContext";
-import { addScore } from "@/lib/api";
+import { addScore, voidEntry } from "@/lib/api";
 import { SCORE_UNITS } from "@/lib/constants";
 import { Glass } from "@/components/ui";
 
@@ -31,8 +31,27 @@ const Step = styled.button<{ $bg?: string }>`
   display: flex; align-items: center; justify-content: center;
   background: ${({ $bg }) => $bg ?? "rgba(255,255,255,.18)"};
   border: 1px solid rgba(255,255,255,.3);
+  transition: opacity .12s ease;
+  &:disabled { opacity: .5; }
 `;
 const Empty = styled(Glass)` padding: 28px 20px; text-align: center; color: rgba(255,255,255,.8); `;
+const Toast = styled.div<{ $err?: boolean }>`
+  display: flex; align-items: center; gap: 9px; margin-bottom: 14px;
+  padding: 12px 14px; border-radius: 16px; font-size: 14px; font-weight: 700;
+  color: #fff;
+  background: ${({ $err }) => ($err ? "rgba(239,68,68,.9)" : "rgba(16,185,129,.9)")};
+  border: 1px solid rgba(255,255,255,.35);
+`;
+const ToastUndo = styled.button`
+  margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700;
+  color: #fff; padding: 6px 10px; border-radius: 11px; background: rgba(255,255,255,.22);
+`;
+
+interface Feedback {
+  err: boolean;
+  msg: string;
+  entryId?: string;
+}
 
 export default function Input() {
   const { teams } = useTeams();
@@ -42,21 +61,65 @@ export default function Input() {
   const [unit, setUnit] = useState<number>(5);
   const [custom, setCustom] = useState(false);
   const [customVal, setCustomVal] = useState("3");
+  const [busy, setBusy] = useState<Record<string, boolean>>({});
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
 
-  const activeTeams = teams.filter((t) => t.active);
   const activeGames = games.filter((g) => g.active);
+  // 입력 목록은 점수와 무관하게 이름순 고정 — 점수 변동으로 재정렬돼 오탭되는 것을 방지
+  const orderedTeams = teams
+    .filter((t) => t.active)
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name, "ko", { numeric: true }));
+
   const activeGameId = gameId ?? activeGames[0]?.id ?? null;
   const effectiveUnit = custom ? Number(customVal) || 0 : unit;
   const createdBy = userId;
 
+  // 피드백 토스트 자동 사라짐
+  useEffect(() => {
+    if (!feedback) return;
+    const t = window.setTimeout(() => setFeedback(null), feedback.err ? 4000 : 3000);
+    return () => window.clearTimeout(t);
+  }, [feedback]);
+
   async function give(teamId: string, sign: 1 | -1) {
-    if (effectiveUnit === 0) return;
-    await addScore(teamId, activeGameId, sign * effectiveUnit, createdBy);
+    if (effectiveUnit === 0 || busy[teamId]) return; // 중복 탭 방지
+    const points = sign * effectiveUnit;
+    const teamName = teams.find((t) => t.id === teamId)?.name ?? "팀";
+    setBusy((b) => ({ ...b, [teamId]: true }));
+    try {
+      const id = await addScore(teamId, activeGameId, points, createdBy);
+      setFeedback({ err: false, msg: `${teamName} ${points >= 0 ? `+${points}` : points}`, entryId: id });
+    } catch {
+      setFeedback({ err: true, msg: "저장 실패 — 네트워크를 확인하고 다시 시도하세요" });
+    } finally {
+      setBusy((b) => ({ ...b, [teamId]: false }));
+    }
+  }
+
+  async function undoLast() {
+    if (!feedback?.entryId) return;
+    try {
+      await voidEntry(feedback.entryId);
+      setFeedback(null);
+    } catch {
+      setFeedback({ err: true, msg: "취소 실패 — 다시 시도하세요" });
+    }
   }
 
   return (
     <>
       <Title>점수 입력</Title>
+
+      {feedback && (
+        <Toast $err={feedback.err}>
+          {feedback.err ? <TriangleAlert size={17} /> : <Check size={17} />}
+          <span>{feedback.msg}</span>
+          {!feedback.err && feedback.entryId && (
+            <ToastUndo onClick={() => void undoLast()}><Undo2 size={13} /> 되돌리기</ToastUndo>
+          )}
+        </Toast>
+      )}
 
       <Label>게임 선택</Label>
       {activeGames.length === 0 ? (
@@ -81,15 +144,15 @@ export default function Input() {
         )}
       </ChipRow>
 
-      {activeTeams.map((t) => (
+      {orderedTeams.map((t) => (
         <TeamCard key={t.id} $variant="medium">
           <Emoji>{t.emoji}</Emoji>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 15, fontWeight: 700 }}>{t.name}</div>
             <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'Pretendard',sans-serif" }}>{t.totalScore}</div>
           </div>
-          <Step onClick={() => void give(t.id, -1)}><Minus size={22} color="#fff" /></Step>
-          <Step $bg={t.color} onClick={() => void give(t.id, 1)}><Plus size={22} color="#fff" /></Step>
+          <Step disabled={busy[t.id]} onClick={() => void give(t.id, -1)}><Minus size={22} color="#fff" /></Step>
+          <Step $bg={t.color} disabled={busy[t.id]} onClick={() => void give(t.id, 1)}><Plus size={22} color="#fff" /></Step>
         </TeamCard>
       ))}
     </>

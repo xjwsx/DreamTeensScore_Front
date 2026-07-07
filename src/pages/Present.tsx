@@ -4,6 +4,7 @@ import { Trophy, X } from "lucide-react";
 import { Screen, Blob, Content } from "@/components/ui";
 import { useTeams } from "@/hooks/useTeams";
 import { TeamRankRow } from "@/components/TeamRankRow";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 const Header = styled.div` display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; `;
 const Title = styled.div` display: flex; align-items: center; gap: 10px; font-size: 30px; font-weight: 800; `;
@@ -15,9 +16,11 @@ const List = styled.div` display: flex; flex-direction: column; gap: 14px; `;
 
 export default function Present() {
   const nav = useNavigate();
-  const { teams } = useTeams();
+  const { teams, loading } = useTeams();
   const activeTeams = teams.filter((t) => t.active);
   const maxScore = activeTeams.reduce((m, t) => Math.max(m, t.totalScore), 0);
+
+  if (loading) return <LoadingScreen />;
 
   return (
     <Screen>

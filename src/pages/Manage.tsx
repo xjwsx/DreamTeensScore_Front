@@ -10,6 +10,7 @@ import {
 } from "@/lib/api";
 import { TEAM_COLORS, TEAM_EMOJIS, GAME_EMOJIS } from "@/lib/constants";
 import { Glass } from "@/components/ui";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 const Section = styled.div` display: flex; align-items: center; justify-content: space-between; margin: 6px 0 12px; `;
 const SectionTitle = styled.div` font-size: 17px; font-weight: 800; `;
@@ -68,8 +69,8 @@ function fmt(iso: string): string {
 }
 
 export default function Manage() {
-  const { teams } = useTeams();
-  const { games } = useGames();
+  const { teams, loading: teamsLoading } = useTeams();
+  const { games, loading: gamesLoading } = useGames();
   const { userId, name } = useAuth();
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -119,6 +120,8 @@ export default function Manage() {
     }
     setConfirmDelete(id);
   }
+
+  if (teamsLoading || gamesLoading) return <LoadingScreen />;
 
   return (
     <>

@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { addScore, voidEntry } from "@/lib/api";
 import { SCORE_UNITS } from "@/lib/constants";
 import { Glass } from "@/components/ui";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 const Title = styled.div` font-size: 26px; font-weight: 800; margin-bottom: 16px; `;
 const Label = styled.div` font-size: 13px; font-weight: 700; color: rgba(255,255,255,.7); margin-bottom: 8px; `;
@@ -99,8 +100,8 @@ function useHorizontalWheel<T extends HTMLElement>() {
 }
 
 export default function Input() {
-  const { teams } = useTeams();
-  const { games } = useGames();
+  const { teams, loading: teamsLoading } = useTeams();
+  const { games, loading: gamesLoading } = useGames();
   const { userId } = useAuth();
   const [gameId, setGameId] = useState<string | null>(null);
   const [unit, setUnit] = useState<number>(5);
@@ -153,6 +154,8 @@ export default function Input() {
       setFeedback({ err: true, msg: "취소 실패 — 다시 시도하세요" });
     }
   }
+
+  if (teamsLoading || gamesLoading) return <LoadingScreen />;
 
   return (
     <>

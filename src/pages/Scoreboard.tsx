@@ -5,6 +5,7 @@ import { useTeams } from "@/hooks/useTeams";
 import { useAuth } from "@/context/AuthContext";
 import { TeamRankRow } from "@/components/TeamRankRow";
 import { Glass } from "@/components/ui";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 const Header = styled.div` display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; `;
 const Over = styled.div` font-size: 12px; font-weight: 800; letter-spacing: 2px; color: rgba(255,255,255,.7); `;
@@ -27,6 +28,8 @@ export default function Scoreboard() {
   const activeTeams = teams.filter((t) => t.active);
   const maxScore = activeTeams.reduce((m, t) => Math.max(m, t.totalScore), 0);
 
+  if (loading) return <LoadingScreen />;
+
   return (
     <>
       <Header>
@@ -38,7 +41,7 @@ export default function Scoreboard() {
       </Header>
 
       {activeTeams.length === 0 ? (
-        <Empty $variant="soft">{loading ? "불러오는 중…" : "아직 팀이 없어요. 팀·게임 탭에서 추가하세요."}</Empty>
+        <Empty $variant="soft">아직 팀이 없어요. 팀·게임 탭에서 추가하세요.</Empty>
       ) : (
         <List>
           {activeTeams.map((t, i) => (

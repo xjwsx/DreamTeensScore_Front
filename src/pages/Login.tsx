@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { Trophy, User, KeyRound, ArrowRight, Eye } from "lucide-react";
 import { Screen, Blob, Content, WhiteButton, GhostButton } from "@/components/ui";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import { login } from "@/lib/auth";
 
 const Center = styled.div` flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 28px; `;
@@ -51,6 +52,8 @@ export default function Login() {
   }
 
   return (
+    <>
+    {busy && <LoadingScreen />}
     <Screen>
       <Blob $size={340} $top="-80px" $left="-40px" $bg="radial-gradient(circle at 35% 35%,rgba(255,255,255,.7),rgba(45,212,191,.2) 60%,transparent 72%)" />
       <Blob $size={200} $top="120px" $left="200px" $bg="radial-gradient(circle,rgba(14,165,233,.5),transparent 65%)" />
@@ -83,5 +86,6 @@ export default function Login() {
         </Center>
       </Content>
     </Screen>
+    </>
   );
 }

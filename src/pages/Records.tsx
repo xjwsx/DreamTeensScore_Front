@@ -5,6 +5,7 @@ import { useTeams } from "@/hooks/useTeams";
 import { useGames } from "@/hooks/useGames";
 import { voidEntry } from "@/lib/api";
 import { Glass } from "@/components/ui";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 const Title = styled.div` font-size: 26px; font-weight: 800; margin-bottom: 16px; `;
 const Card = styled(Glass)<{ $void?: boolean }>`
@@ -28,10 +29,12 @@ function hhmm(iso: string): string {
 
 export default function Records() {
   const { entries, loading } = useScoreEntries(80);
-  const { teams } = useTeams();
-  const { games } = useGames();
+  const { teams, loading: teamsLoading } = useTeams();
+  const { games, loading: gamesLoading } = useGames();
   const teamName = (id: string) => teams.find((t) => t.id === id)?.name ?? "팀";
   const gameName = (id: string | null) => (id ? games.find((g) => g.id === id)?.name ?? "게임" : "직접");
+
+  if (loading || teamsLoading || gamesLoading) return <LoadingScreen />;
 
   return (
     <>
@@ -39,7 +42,7 @@ export default function Records() {
       {entries.length === 0 ? (
         <Empty $variant="soft">
           <Clock size={30} color="rgba(255,255,255,.8)" />
-          <div style={{ fontWeight: 700, marginTop: 10 }}>{loading ? "불러오는 중…" : "아직 점수 기록이 없어요"}</div>
+          <div style={{ fontWeight: 700, marginTop: 10 }}>아직 점수 기록이 없어요</div>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,.7)", marginTop: 4 }}>점수를 입력하면 여기에 남습니다.</div>
         </Empty>
       ) : (

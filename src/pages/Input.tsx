@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { Minus, Plus, Check, TriangleAlert, Undo2 } from "lucide-react";
 import { useTeams } from "@/hooks/useTeams";
@@ -10,15 +10,39 @@ import { Glass } from "@/components/ui";
 
 const Title = styled.div` font-size: 26px; font-weight: 800; margin-bottom: 16px; `;
 const Label = styled.div` font-size: 13px; font-weight: 700; color: rgba(255,255,255,.7); margin-bottom: 8px; `;
-const ChipRow = styled.div` display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; `;
+const ChipRow = styled.div`
+  display: flex;
+  gap: 9px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding: 2px 2px 8px;
+  margin-bottom: 16px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  &::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+  /* 우측 끝단 페이드 — "더 있음" 스크롤 힌트 */
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent);
+`;
 const Chip = styled.button<{ $on?: boolean }>`
-  flex-shrink: 0; padding: 10px 15px; border-radius: 16px; font-size: 14px; font-weight: 700;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  padding: 11px 17px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
   color: ${({ $on }) => ($on ? "#0e7490" : "#fff")};
-  background: ${({ $on }) => ($on ? "#fff" : "rgba(255,255,255,.16)")};
-  border: 1px solid rgba(255,255,255,.3);
+  background: ${({ $on }) => ($on ? "#fff" : "rgba(255,255,255,.14)")};
+  border: 1px solid ${({ $on }) => ($on ? "transparent" : "rgba(255,255,255,.28)")};
+  backdrop-filter: blur(6px);
+  transition: transform .12s ease, background .14s ease, color .14s ease;
+  &:active { transform: scale(.95); }
 `;
 const CustomInput = styled.input`
-  width: 74px; padding: 10px 12px; border-radius: 16px; font-size: 14px; font-weight: 700; text-align: center;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  width: 74px; padding: 11px 12px; border-radius: 999px; font-size: 14px; font-weight: 700; text-align: center;
   color: #0e7490; background: #fff; border: none;
 `;
 const TeamCard = styled(Glass)` display: flex; align-items: center; gap: 14px; padding: 16px; margin-bottom: 12px; `;
@@ -53,6 +77,24 @@ interface Feedback {
   entryId?: string;
 }
 
+/** 데스크톱 마우스 휠(세로)을 가로 스크롤로 변환 — 스크롤바 없이도 칩 줄을 넘길 수 있게 */
+function useHorizontalWheel<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; // 트랙패드 가로 스크롤은 네이티브에 맡김
+      if (e.deltaY === 0 || el.scrollWidth <= el.clientWidth) return; // 넘길 게 없으면 페이지 스크롤 유지
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
+  return ref;
+}
+
 export default function Input() {
   const { teams } = useTeams();
   const { games } = useGames();
@@ -63,6 +105,8 @@ export default function Input() {
   const [customVal, setCustomVal] = useState("3");
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const gameRowRef = useHorizontalWheel<HTMLDivElement>();
+  const unitRowRef = useHorizontalWheel<HTMLDivElement>();
 
   const activeGames = games.filter((g) => g.active);
   // 입력 목록은 점수와 무관하게 이름순 고정 — 점수 변동으로 재정렬돼 오탭되는 것을 방지
@@ -125,7 +169,7 @@ export default function Input() {
       {activeGames.length === 0 ? (
         <Empty $variant="soft" style={{ marginBottom: 16 }}>게임이 없어요. 팀·게임 탭에서 추가하세요.</Empty>
       ) : (
-        <ChipRow>
+        <ChipRow ref={gameRowRef}>
           {activeGames.map((g) => (
             <Chip key={g.id} $on={g.id === activeGameId} onClick={() => setGameId(g.id)}>{g.emoji} {g.name}</Chip>
           ))}
@@ -133,7 +177,7 @@ export default function Input() {
       )}
 
       <Label>점수 단위</Label>
-      <ChipRow>
+      <ChipRow ref={unitRowRef}>
         {SCORE_UNITS.map((u) => (
           <Chip key={u} $on={!custom && unit === u} onClick={() => { setCustom(false); setUnit(u); }}>+{u}</Chip>
         ))}

@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/database.types";
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -10,4 +11,5 @@ if (!url || !anonKey) {
   );
 }
 
-export const supabase = createClient(url ?? "", anonKey ?? "");
+// 타입드 클라이언트 — 테이블명·컬럼·insert/update 페이로드가 컴파일 타임에 검증된다.
+export const supabase = createClient<Database>(url ?? "", anonKey ?? "");

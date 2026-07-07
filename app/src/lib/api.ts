@@ -1,23 +1,32 @@
 import { supabase } from "@/lib/supabase";
+import type { Json } from "@/lib/database.types";
+
+// 에러 표준화: Supabase 세부(PostgrestError)를 노출하지 않고 한글 메시지로 던진다.
+function fail(msg: string, error: unknown): never {
+  console.error("[api]", msg, error);
+  throw new Error(msg);
+}
 
 export async function addScore(
   teamId: string, gameId: string | null, points: number, createdBy: string | null
 ): Promise<string> {
-  const { data, error } = await supabase.from("score_entries").insert({
-    team_id: teamId, game_id: gameId, points, created_by: createdBy, voided: false,
-  }).select("id").single();
-  if (error) throw error;
-  return (data as { id: string }).id;
+  const { data, error } = await supabase
+    .from("score_entries")
+    .insert({ team_id: teamId, game_id: gameId, points, created_by: createdBy, voided: false })
+    .select("id")
+    .single();
+  if (error || !data) fail("점수를 저장하지 못했습니다.", error);
+  return data.id;
 }
 
 export async function voidEntry(id: string): Promise<void> {
   const { error } = await supabase.from("score_entries").update({ voided: true }).eq("id", id);
-  if (error) throw error;
+  if (error) fail("취소하지 못했습니다.", error);
 }
 
 // ---------- 감사 로그 (best-effort: 실패해도 주 작업을 막지 않음) ----------
 export async function addAudit(
-  action: string, actor: string | null, detail: Record<string, unknown> = {}
+  action: string, actor: string | null, detail: Record<string, Json> = {}
 ): Promise<void> {
   const { error } = await supabase.from("audit_log").insert({ action, actor, detail });
   if (error) console.warn("[audit] 기록 실패:", error.message);
@@ -29,15 +38,17 @@ export interface ResetInfo {
 }
 
 export async function lastResetInfo(): Promise<ResetInfo | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("audit_log")
-    .select("createdAt:created_at, detail")
+    .select("created_at, detail")
     .eq("action", "reset")
     .order("created_at", { ascending: false })
     .limit(1);
-  const row = data?.[0] as { createdAt: string; detail: { by?: string } } | undefined;
+  if (error) return null;
+  const row = data?.[0];
   if (!row) return null;
-  return { at: row.createdAt, by: row.detail?.by ?? null };
+  const detail = (row.detail ?? {}) as { by?: string };
+  return { at: row.created_at, by: detail.by ?? null };
 }
 
 // ---------- 초기화 = soft(보관) + 되돌리기 ----------
@@ -48,7 +59,7 @@ export async function resetAll(actorId: string | null, actorName: string | null)
     .update({ archived_at: stamp })
     .is("archived_at", null)
     .select("id");
-  if (error) throw error;
+  if (error) fail("초기화하지 못했습니다.", error);
   const count = data?.length ?? 0;
   await addAudit("reset", actorId, { by: actorName, at: stamp, count });
   return count;
@@ -61,14 +72,14 @@ export async function restoreLastReset(actorId: string | null): Promise<number> 
     .not("archived_at", "is", null)
     .order("archived_at", { ascending: false })
     .limit(1);
-  const last = (data?.[0] as { archived_at: string } | undefined)?.archived_at;
+  const last = data?.[0]?.archived_at ?? null;
   if (!last) return 0;
   const { data: restored, error } = await supabase
     .from("score_entries")
     .update({ archived_at: null })
     .eq("archived_at", last)
     .select("id");
-  if (error) throw error;
+  if (error) fail("되돌리지 못했습니다.", error);
   const count = restored?.length ?? 0;
   await addAudit("reset_undo", actorId, { at: last, count });
   return count;
@@ -77,12 +88,12 @@ export async function restoreLastReset(actorId: string | null): Promise<number> 
 // ---------- 팀/게임: 비활성화(삭제 대신) ----------
 export async function setTeamActive(id: string, active: boolean, actorId: string | null): Promise<void> {
   const { error } = await supabase.from("teams").update({ active }).eq("id", id);
-  if (error) throw error;
+  if (error) fail("팀 상태를 바꾸지 못했습니다.", error);
   await addAudit(active ? "team_activate" : "team_deactivate", actorId, { teamId: id });
 }
 export async function setGameActive(id: string, active: boolean, actorId: string | null): Promise<void> {
   const { error } = await supabase.from("games").update({ active }).eq("id", id);
-  if (error) throw error;
+  if (error) fail("게임 상태를 바꾸지 못했습니다.", error);
   await addAudit(active ? "game_activate" : "game_deactivate", actorId, { gameId: id });
 }
 
@@ -92,28 +103,28 @@ export async function setGameActive(id: string, active: boolean, actorId: string
 // ---------- CRUD ----------
 export async function createTeam(name: string, emoji: string, color: string): Promise<void> {
   const { error } = await supabase.from("teams").insert({ name, emoji, color });
-  if (error) throw error;
+  if (error) fail("팀을 추가하지 못했습니다.", error);
 }
 export async function updateTeam(id: string, patch: Partial<{ name: string; emoji: string; color: string }>): Promise<void> {
   const { error } = await supabase.from("teams").update(patch).eq("id", id);
-  if (error) throw error;
+  if (error) fail("팀을 수정하지 못했습니다.", error);
 }
 export async function deleteTeam(id: string, actorId: string | null): Promise<void> {
   const { error } = await supabase.from("teams").delete().eq("id", id);
-  if (error) throw error;
+  if (error) fail("팀을 삭제하지 못했습니다.", error);
   await addAudit("team_delete", actorId, { teamId: id });
 }
 
 export async function createGame(name: string, emoji: string): Promise<void> {
   const { error } = await supabase.from("games").insert({ name, emoji });
-  if (error) throw error;
+  if (error) fail("게임을 추가하지 못했습니다.", error);
 }
 export async function updateGame(id: string, patch: Partial<{ name: string; emoji: string }>): Promise<void> {
   const { error } = await supabase.from("games").update(patch).eq("id", id);
-  if (error) throw error;
+  if (error) fail("게임을 수정하지 못했습니다.", error);
 }
 export async function deleteGame(id: string, actorId: string | null): Promise<void> {
   const { error } = await supabase.from("games").delete().eq("id", id);
-  if (error) throw error;
+  if (error) fail("게임을 삭제하지 못했습니다.", error);
   await addAudit("game_delete", actorId, { gameId: id });
 }

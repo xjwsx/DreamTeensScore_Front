@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
-import { Plus, X, RotateCcw, Check, Undo2 } from "lucide-react";
+import { Plus, X, RotateCcw, Undo2 } from "lucide-react";
 import { useTeams } from "@/hooks/useTeams";
 import { useGames } from "@/hooks/useGames";
 import { useAuth } from "@/context/AuthContext";
@@ -12,6 +12,7 @@ import { TEAM_COLORS, TEAM_EMOJIS, GAME_EMOJIS } from "@/lib/constants";
 import { Glass } from "@/components/ui";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { Toast, useToast } from "@/components/Toast";
+import { ConfirmModal } from "@/components/ConfirmModal";
 
 const Section = styled.div` display: flex; align-items: center; justify-content: space-between; margin: 6px 0 12px; `;
 const SectionTitle = styled.div` font-size: 17px; font-weight: 800; `;
@@ -43,10 +44,10 @@ const Switch = styled.button<{ $on?: boolean }>`
   background: ${({ $on }) => ($on ? "#22d3ee" : "rgba(255,255,255,.2)")};
   & > span { width: 20px; height: 20px; border-radius: 50%; background: #fff; display: block; }
 `;
-const DelBtn = styled.button<{ $armed?: boolean }>`
+const DelBtn = styled.button`
   width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  background: ${({ $armed }) => ($armed ? "#ef4444" : "rgba(255,255,255,.14)")};
+  background: rgba(255,255,255,.14);
 `;
 const Palette = styled.div` display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; `;
 const Swatch = styled.button<{ $c: string; $on?: boolean }>`
@@ -80,8 +81,8 @@ export default function Manage() {
   const { games, loading: gamesLoading } = useGames();
   const { userId, name } = useAuth();
   const { toast, notify } = useToast();
-  const [confirmReset, setConfirmReset] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; kind: "team" | "game"; name: string } | null>(null);
   const [canUndo, setCanUndo] = useState(false);
   const [lastReset, setLastReset] = useState<ResetInfo | null>(null);
 
@@ -106,8 +107,7 @@ export default function Manage() {
   }
 
   async function doReset() {
-    if (!confirmReset) { setConfirmReset(true); return; }
-    setConfirmReset(false);
+    setConfirmResetOpen(false);
     try {
       const n = await resetAll(userId, name);
       notify(`${n}개 기록을 보관했어요 (총점 0)`);
@@ -128,21 +128,18 @@ export default function Manage() {
     }
   }
 
-  async function armOrDelete(id: string, kind: "team" | "game") {
-    if (confirmDelete === id) {
-      try {
-        if (kind === "team") await deleteTeam(id, userId);
-        else await deleteGame(id, userId);
-        setConfirmDelete(null);
-        notify(kind === "team" ? "팀을 삭제했어요" : "게임을 삭제했어요");
-      } catch {
-        // on delete restrict 위반 등 — 점수 기록이 연결된 경우
-        setConfirmDelete(null);
-        notify("점수 기록이 있어 삭제할 수 없어요 — 대신 비활성화하세요", true);
-      }
-      return;
+  async function performDelete() {
+    if (!deleteTarget) return;
+    const { id, kind } = deleteTarget;
+    setDeleteTarget(null);
+    try {
+      if (kind === "team") await deleteTeam(id, userId);
+      else await deleteGame(id, userId);
+      notify(kind === "team" ? "팀을 삭제했어요" : "게임을 삭제했어요");
+    } catch {
+      // on delete restrict 위반 등 — 점수 기록이 연결된 경우
+      notify("점수 기록이 있어 삭제할 수 없어요 — 대신 비활성화하세요", true);
     }
-    setConfirmDelete(id);
   }
 
   if (teamsLoading || gamesLoading) return <LoadingScreen />;
@@ -161,8 +158,8 @@ export default function Manage() {
             <EmojiBtn onClick={() => void updateTeam(t.id, { emoji: nextIn(TEAM_EMOJIS, t.emoji) })}>{t.emoji}</EmojiBtn>
             <NameInput defaultValue={t.name} onBlur={(e) => { if (e.target.value !== t.name) void updateTeam(t.id, { name: e.target.value }); }} />
             <Switch $on={t.active} title={t.active ? "활성" : "비활성"} onClick={() => void setTeamActive(t.id, !t.active, userId)}><span /></Switch>
-            <DelBtn $armed={confirmDelete === t.id} onClick={() => void armOrDelete(t.id, "team")}>
-              {confirmDelete === t.id ? <Check size={18} color="#fff" /> : <X size={18} color="#fff" />}
+            <DelBtn onClick={() => setDeleteTarget({ id: t.id, kind: "team", name: t.name })}>
+              <X size={18} color="#fff" />
             </DelBtn>
           </Row>
           <Palette>
@@ -185,16 +182,16 @@ export default function Manage() {
             <EmojiBtn onClick={() => void updateGame(g.id, { emoji: nextIn(GAME_EMOJIS, g.emoji) })}>{g.emoji}</EmojiBtn>
             <NameInput defaultValue={g.name} onBlur={(e) => { if (e.target.value !== g.name) void updateGame(g.id, { name: e.target.value }); }} />
             <Switch $on={g.active} title={g.active ? "활성" : "비활성"} onClick={() => void setGameActive(g.id, !g.active, userId)}><span /></Switch>
-            <DelBtn $armed={confirmDelete === g.id} onClick={() => void armOrDelete(g.id, "game")}>
-              {confirmDelete === g.id ? <Check size={18} color="#fff" /> : <X size={18} color="#fff" />}
+            <DelBtn onClick={() => setDeleteTarget({ id: g.id, kind: "game", name: g.name })}>
+              <X size={18} color="#fff" />
             </DelBtn>
           </Row>
         </Card>
       ))}
       </CardGrid>
 
-      <Reset onClick={() => void doReset()}>
-        <RotateCcw size={16} /> {confirmReset ? "한 번 더 탭하면 전체 초기화 (기록은 보관됩니다)" : "전체 점수 · 기록 초기화"}
+      <Reset onClick={() => setConfirmResetOpen(true)}>
+        <RotateCcw size={16} /> 전체 점수 · 기록 초기화
       </Reset>
       {canUndo && (
         <ResetRow>
@@ -203,6 +200,25 @@ export default function Manage() {
         </ResetRow>
       )}
       {lastReset && <AuditLine>마지막 초기화: {fmt(lastReset.at)} · {lastReset.by ?? "?"}</AuditLine>}
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title={`'${deleteTarget?.name ?? ""}'을(를) 삭제할까요?`}
+        message="삭제하면 되돌릴 수 없어요. 점수 기록이 있으면 대신 비활성화하세요."
+        confirmLabel="삭제"
+        danger
+        onConfirm={() => void performDelete()}
+        onCancel={() => setDeleteTarget(null)}
+      />
+      <ConfirmModal
+        open={confirmResetOpen}
+        title="전체 점수·기록을 초기화할까요?"
+        message="기록은 보관되어 되돌릴 수 있어요."
+        confirmLabel="초기화"
+        danger
+        onConfirm={() => void doReset()}
+        onCancel={() => setConfirmResetOpen(false)}
+      />
     </>
   );
 }

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { Presentation, LogOut } from "lucide-react";
@@ -6,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { TeamRankRow } from "@/components/TeamRankRow";
 import { Glass } from "@/components/ui";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { ConfirmModal } from "@/components/ConfirmModal";
 
 const Header = styled.div` display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; `;
 const Over = styled.div` font-size: 12px; font-weight: 800; letter-spacing: 2px; color: rgba(255,255,255,.7); `;
@@ -25,6 +27,7 @@ export default function Scoreboard() {
   const nav = useNavigate();
   const { teams, loading } = useTeams();
   const { logout } = useAuth();
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const activeTeams = teams.filter((t) => t.active);
   const maxScore = activeTeams.reduce((m, t) => Math.max(m, t.totalScore), 0);
 
@@ -50,9 +53,18 @@ export default function Scoreboard() {
         </List>
       )}
 
-      <Logout onClick={() => { void logout(); nav("/login", { replace: true }); }}>
+      <Logout onClick={() => setConfirmLogout(true)}>
         <LogOut size={15} /> 로그아웃
       </Logout>
+
+      <ConfirmModal
+        open={confirmLogout}
+        title="로그아웃 하시겠습니까?"
+        confirmLabel="로그아웃"
+        cancelLabel="취소"
+        onConfirm={() => { void logout(); nav("/login", { replace: true }); }}
+        onCancel={() => setConfirmLogout(false)}
+      />
     </>
   );
 }

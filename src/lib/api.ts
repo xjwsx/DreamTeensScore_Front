@@ -128,3 +128,10 @@ export async function deleteGame(id: string, actorId: string | null): Promise<vo
   if (error) fail("게임을 삭제하지 못했습니다.", error);
   await addAudit("game_delete", actorId, { gameId: id });
 }
+
+// ---------- 팀 위치(맵): 스태프도 가능하도록 SECURITY DEFINER RPC 로 우회 ----------
+// gameId=null 이면 대기(미배치)로 이동.
+export async function setTeamGame(teamId: string, gameId: string | null): Promise<void> {
+  const { error } = await supabase.rpc("set_team_game", { p_team: teamId, p_game: gameId });
+  if (error) fail("팀 위치를 바꾸지 못했습니다.", error);
+}

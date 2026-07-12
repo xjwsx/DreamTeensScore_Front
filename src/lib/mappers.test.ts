@@ -5,13 +5,16 @@ import type { TeamRow, GameRow, ScoreEntryRow } from "@/lib/database.types";
 describe("toTeam", () => {
   const row: TeamRow = {
     id: "t1", name: "1팀", emoji: "🦁", color: "#fb7185",
-    total_score: 30, active: true, created_at: "2026-07-07T00:00:00Z",
+    total_score: 30, active: true, current_game_id: null, created_at: "2026-07-07T00:00:00Z",
   };
   it("maps snake_case → camelCase", () => {
-    expect(toTeam(row)).toEqual({ id: "t1", name: "1팀", emoji: "🦁", color: "#fb7185", totalScore: 30, active: true });
+    expect(toTeam(row)).toEqual({ id: "t1", name: "1팀", emoji: "🦁", color: "#fb7185", totalScore: 30, active: true, currentGameId: null });
   });
   it("carries the active flag through", () => {
     expect(toTeam({ ...row, active: false }).active).toBe(false);
+  });
+  it("maps current_game_id → currentGameId (배치된 팀)", () => {
+    expect(toTeam({ ...row, current_game_id: "g9" }).currentGameId).toBe("g9");
   });
 });
 

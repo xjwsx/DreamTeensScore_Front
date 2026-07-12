@@ -4,7 +4,7 @@ import type { TeamRow, GameRow, ScoreEntryRow } from "@/lib/database.types";
 import type { Team, Game, ScoreEntry } from "@/types";
 
 export function toTeam(r: TeamRow): Team {
-  return { id: r.id, name: r.name, emoji: r.emoji, color: r.color, totalScore: r.total_score, active: r.active };
+  return { id: r.id, name: r.name, emoji: r.emoji, color: r.color, totalScore: r.total_score, active: r.active, currentGameId: r.current_game_id };
 }
 
 export function toGame(r: GameRow): Game {

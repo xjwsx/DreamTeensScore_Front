@@ -4,7 +4,7 @@ import { TabBar } from "@/components/TabBar";
 
 // 스태프 CRUD 화면(입력·기록·관리)은 넓은 화면에서 폭을 넓혀 그리드를 활용하고,
 // 순위판은 랭킹 가독성을 위해 좁은 폭을 유지한다.
-const WIDE_ROUTES = ["/input", "/log", "/manage"];
+const WIDE_ROUTES = ["/input", "/log", "/manage", "/map"];
 
 export function AppLayout() {
   const { pathname } = useLocation();

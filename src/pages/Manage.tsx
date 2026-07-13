@@ -22,10 +22,13 @@ const AddBtn = styled.button`
 `;
 const CardGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr;
+  /* minmax(0, 1fr): 기본값 1fr(=minmax(auto,1fr))은 트랙 최소폭이 아이템 min-content라,
+     좁은 폰에서 카드가 안 줄어들어 오른쪽 삭제 버튼이 화면 밖으로 잘렸다.
+     최소폭을 0으로 낮춰 카드가 화면 폭에 맞게 줄고 좌우 여백이 대칭이 되도록 한다. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   margin-bottom: 10px;
-  @media (min-width: 768px) { grid-template-columns: repeat(2, 1fr); }
+  @media (min-width: 768px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 `;
 const Card = styled(Glass)<{ $off?: boolean }>` padding: 14px; opacity: ${({ $off }) => ($off ? 0.55 : 1)}; `;
 const Row = styled.div` display: flex; align-items: center; gap: 10px; `;

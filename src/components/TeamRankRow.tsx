@@ -30,6 +30,11 @@ const Emoji = styled.div<{ $big?: boolean }>`
 const Name = styled.div<{ $big?: boolean }>`
   font-weight: 700; font-size: ${({ $big }) => ($big ? 19 : 16)}px; margin-bottom: 7px;
 `;
+const TieTag = styled.span<{ $big?: boolean }>`
+  margin-left: 8px; vertical-align: middle; white-space: nowrap;
+  font-weight: 800; font-size: ${({ $big }) => ($big ? 13 : 11)}px;
+  color: #0e7490; background: #fff; border-radius: 8px; padding: 2px 8px;
+`;
 const Bar = styled.div` height: 7px; border-radius: 4px; background: rgba(255,255,255,.2); overflow: hidden; `;
 const Fill = styled.div<{ $w: number; $c: string }>`
   width: ${({ $w }) => $w}%; height: 100%; border-radius: 4px; background: ${({ $c }) => $c};
@@ -46,15 +51,17 @@ const MEDAL: Record<number, string> = {
   3: "linear-gradient(150deg,#fed7aa,#fb923c)",
 };
 
-export function TeamRankRow({ team, rank, maxScore, big }: { team: Team; rank: number; maxScore: number; big?: boolean }) {
-  const pct = maxScore > 0 ? Math.min(100, Math.round((team.totalScore / maxScore) * 100)) : 0;
-  const medal = MEDAL[rank];
+export function TeamRankRow({ team, rank, maxScore, big, tied }: { team: Team; rank: number; maxScore: number; big?: boolean; tied?: boolean }) {
+  // 아직 아무도 득점하지 않았으면(전원 0점) 순위를 매기지 않는다 — 뱃지는 "-", 메달·공동표기 없음.
+  const scored = maxScore > 0;
+  const pct = scored ? Math.min(100, Math.round((team.totalScore / maxScore) * 100)) : 0;
+  const medal = scored ? MEDAL[rank] : undefined;
   return (
     <Row $edge={team.color} $big={big}>
-      <Badge $bg={medal ?? ""} $plain={!medal}>{rank}</Badge>
+      <Badge $bg={medal ?? ""} $plain={!medal}>{scored ? rank : "-"}</Badge>
       <Emoji $big={big}>{team.emoji}</Emoji>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <Name $big={big}>{team.name}</Name>
+        <Name $big={big}>{team.name}{scored && tied && <TieTag $big={big}>공동 {rank}위</TieTag>}</Name>
         <Bar><Fill $w={pct} $c={team.color} /></Bar>
       </div>
       <Score $big={big}>{team.totalScore}</Score>

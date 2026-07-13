@@ -4,6 +4,7 @@ import { Trophy, X } from "lucide-react";
 import { Screen, Blob, Content } from "@/components/ui";
 import { useTeams } from "@/hooks/useTeams";
 import { TeamRankRow } from "@/components/TeamRankRow";
+import { rankTeams } from "@/lib/ranking";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
 const Header = styled.div` display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; `;
@@ -40,8 +41,8 @@ export default function Present() {
           <Exit onClick={() => nav("/board")}><X size={16} /> 나가기</Exit>
         </Header>
         <List>
-          {activeTeams.map((t, i) => (
-            <TeamRankRow key={t.id} team={t} rank={i + 1} maxScore={maxScore} big />
+          {rankTeams(activeTeams).map(({ team, rank, tied }) => (
+            <TeamRankRow key={team.id} team={team} rank={rank} tied={tied} maxScore={maxScore} big />
           ))}
         </List>
       </Content>

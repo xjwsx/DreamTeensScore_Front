@@ -5,6 +5,7 @@ import { Presentation, LogOut } from "lucide-react";
 import { useTeams } from "@/hooks/useTeams";
 import { useAuth } from "@/context/AuthContext";
 import { TeamRankRow } from "@/components/TeamRankRow";
+import { rankTeams } from "@/lib/ranking";
 import { Glass } from "@/components/ui";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ConfirmModal } from "@/components/ConfirmModal";
@@ -47,8 +48,8 @@ export default function Scoreboard() {
         <Empty $variant="soft">아직 팀이 없어요. 팀·게임 탭에서 추가하세요.</Empty>
       ) : (
         <List>
-          {activeTeams.map((t, i) => (
-            <TeamRankRow key={t.id} team={t} rank={i + 1} maxScore={maxScore} />
+          {rankTeams(activeTeams).map(({ team, rank, tied }) => (
+            <TeamRankRow key={team.id} team={team} rank={rank} tied={tied} maxScore={maxScore} />
           ))}
         </List>
       )}

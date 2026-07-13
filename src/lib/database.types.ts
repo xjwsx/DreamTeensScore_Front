@@ -8,9 +8,9 @@ export interface Database {
   public: {
     Tables: {
       teams: {
-        Row: { id: string; name: string; emoji: string; color: string; total_score: number; active: boolean; created_at: string };
-        Insert: { id?: string; name: string; emoji?: string; color?: string; total_score?: number; active?: boolean; created_at?: string };
-        Update: { id?: string; name?: string; emoji?: string; color?: string; total_score?: number; active?: boolean; created_at?: string };
+        Row: { id: string; name: string; emoji: string; color: string; total_score: number; active: boolean; current_game_id: string | null; created_at: string };
+        Insert: { id?: string; name: string; emoji?: string; color?: string; total_score?: number; active?: boolean; current_game_id?: string | null; created_at?: string };
+        Update: { id?: string; name?: string; emoji?: string; color?: string; total_score?: number; active?: boolean; current_game_id?: string | null; created_at?: string };
         Relationships: [];
       };
       games: {
@@ -48,7 +48,9 @@ export interface Database {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      set_team_game: { Args: { p_team: string; p_game: string | null }; Returns: undefined };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

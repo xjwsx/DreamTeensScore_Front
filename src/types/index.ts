@@ -8,6 +8,7 @@ export interface Team {
   color: string;
   totalScore: number;
   active: boolean;
+  currentGameId: string | null; // 팀이 지금 머무는 게임. null=대기(미배치)
 }
 
 export interface Game {

@@ -7,6 +7,7 @@ const calls: Record<string, unknown> = {};
 let insertError: { message: string } | null = null;
 let updateError: { message: string } | null = null;
 let insertReturn: { id: string } | null = { id: "new-id" };
+let rpcError: { message: string } | null = null;
 
 function makeBuilder(table: string) {
   const b: Record<string, unknown> = {};
@@ -36,15 +37,22 @@ function makeBuilder(table: string) {
 }
 
 vi.mock("@/lib/supabase", () => ({
-  supabase: { from: (table: string) => makeBuilder(table) },
+  supabase: {
+    from: (table: string) => makeBuilder(table),
+    rpc: (fn: string, args: unknown) => {
+      calls[`rpc.${fn}`] = args;
+      return Promise.resolve({ error: rpcError });
+    },
+  },
 }));
 
-import { addScore, voidEntry, setTeamActive, setGameActive, createTeam, createGame, resetAll } from "@/lib/api";
+import { addScore, voidEntry, setTeamActive, setGameActive, createTeam, createGame, resetAll, setTeamGame } from "@/lib/api";
 
 beforeEach(() => {
   for (const k of Object.keys(calls)) delete calls[k];
   insertError = null;
   updateError = null;
+  rpcError = null;
   insertReturn = { id: "new-id" };
 });
 
@@ -116,5 +124,20 @@ describe("createTeam / createGame", () => {
   it("inserts a game row", async () => {
     await createGame("퀴즈", "⚡");
     expect(calls["games.insert"]).toEqual({ name: "퀴즈", emoji: "⚡" });
+  });
+});
+
+describe("setTeamGame", () => {
+  it("calls set_team_game rpc with team and game ids", async () => {
+    await setTeamGame("t1", "g1");
+    expect(calls["rpc.set_team_game"]).toEqual({ p_team: "t1", p_game: "g1" });
+  });
+  it("passes null game for 대기(미배치)", async () => {
+    await setTeamGame("t1", null);
+    expect(calls["rpc.set_team_game"]).toEqual({ p_team: "t1", p_game: null });
+  });
+  it("throws a Korean error on failure", async () => {
+    rpcError = { message: "denied" };
+    await expect(setTeamGame("t1", "g1")).rejects.toThrow("팀 위치를 바꾸지 못했습니다.");
   });
 });

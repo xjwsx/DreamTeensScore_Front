@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { Presentation, LogOut } from "lucide-react";
+import { Presentation, LogOut, Eye, EyeOff } from "lucide-react";
 import { useTeams } from "@/hooks/useTeams";
+import { useSettings } from "@/hooks/useSettings";
 import { useAuth } from "@/context/AuthContext";
+import { setHideScores } from "@/lib/api";
 import { TeamRankRow } from "@/components/TeamRankRow";
 import { rankTeams } from "@/lib/ranking";
 import { Glass } from "@/components/ui";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { Toast, useToast } from "@/components/Toast";
 
 const Header = styled.div` display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; `;
 const Over = styled.div` font-size: 12px; font-weight: 800; letter-spacing: 2px; color: rgba(255,255,255,.7); `;
@@ -17,6 +20,16 @@ const Pill = styled.button`
   display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #0e7490;
   background: #fff; border-radius: 16px; padding: 10px 14px;
 `;
+const Pills = styled.div` display: flex; flex-direction: column; align-items: flex-end; gap: 8px; `;
+const HidePill = styled(Pill)<{ $on?: boolean }>`
+  color: ${({ $on }) => ($on ? "#fff" : "#0e7490")};
+  background: ${({ $on }) => ($on ? "rgba(255,255,255,.18)" : "#fff")};
+  border: 1px solid ${({ $on }) => ($on ? "rgba(255,255,255,.4)" : "transparent")};
+`;
+const Secret = styled(Glass)` padding: 46px 20px; text-align: center; margin-top: 8px; `;
+const SecretEmoji = styled.div` font-size: 46px; margin-bottom: 12px; `;
+const SecretTitle = styled.div` font-size: 20px; font-weight: 800; `;
+const SecretSub = styled.div` font-size: 14px; color: rgba(255,255,255,.75); margin-top: 6px; `;
 const List = styled.div` display: flex; flex-direction: column; gap: 12px; `;
 const Empty = styled(Glass)` padding: 32px 20px; text-align: center; color: rgba(255,255,255,.8); margin-top: 8px; `;
 const Logout = styled.button`
@@ -27,24 +40,52 @@ const Logout = styled.button`
 export default function Scoreboard() {
   const nav = useNavigate();
   const { teams, loading } = useTeams();
-  const { logout } = useAuth();
+  const { hideScores, loading: sLoading } = useSettings();
+  const { role, logout } = useAuth();
+  const { toast, notify } = useToast();
   const [confirmLogout, setConfirmLogout] = useState(false);
   const activeTeams = teams.filter((t) => t.active);
   const maxScore = activeTeams.reduce((m, t) => Math.max(m, t.totalScore), 0);
 
-  if (loading) return <LoadingScreen />;
+  // 설정 로딩까지 기다려서, 가림 상태인데 순위가 잠깐 보이는 깜빡임을 막는다
+  if (loading || sLoading) return <LoadingScreen />;
+
+  const hidden = hideScores && role === "viewer";
+
+  async function toggleHide() {
+    try {
+      await setHideScores(!hideScores);
+      notify(hideScores ? "스코어를 공개했어요" : "게스트에게 스코어를 가렸어요");
+    } catch (e) {
+      notify(e instanceof Error ? e.message : "설정을 바꾸지 못했습니다.", true);
+    }
+  }
 
   return (
     <>
+      <Toast toast={toast} />
       <Header>
         <div>
           <Over>SUMMER RETREAT · TEENS</Over>
           <Title>틴즈 스코어보드</Title>
         </div>
-        <Pill onClick={() => nav("/present")}><Presentation size={16} /> 발표 모드</Pill>
+        <Pills>
+          <Pill onClick={() => nav("/present")}><Presentation size={16} /> 발표 모드</Pill>
+          {role === "admin" && (
+            <HidePill $on={hideScores} onClick={() => void toggleHide()}>
+              {hideScores ? <><EyeOff size={16} /> 가리는 중 — 공개하기</> : <><Eye size={16} /> 스코어 가리기</>}
+            </HidePill>
+          )}
+        </Pills>
       </Header>
 
-      {activeTeams.length === 0 ? (
+      {hidden ? (
+        <Secret $variant="soft">
+          <SecretEmoji>🤫</SecretEmoji>
+          <SecretTitle>순위는 비밀이에요!</SecretTitle>
+          <SecretSub>발표 시간에 공개됩니다</SecretSub>
+        </Secret>
+      ) : activeTeams.length === 0 ? (
         <Empty $variant="soft">아직 팀이 없어요. 팀·게임 탭에서 추가하세요.</Empty>
       ) : (
         <List>

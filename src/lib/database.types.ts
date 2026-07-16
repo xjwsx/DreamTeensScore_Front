@@ -40,6 +40,12 @@ export interface Database {
         };
         Relationships: [];
       };
+      settings: {
+        Row: { key: string; value: Json; updated_at: string };
+        Insert: { key: string; value: Json; updated_at?: string };
+        Update: { key?: string; value?: Json; updated_at?: string };
+        Relationships: [];
+      };
       audit_log: {
         Row: { id: string; action: string; actor: string | null; detail: Json; created_at: string };
         Insert: { id?: string; action: string; actor?: string | null; detail?: Json; created_at?: string };

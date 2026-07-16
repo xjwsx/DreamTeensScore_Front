@@ -1,7 +1,7 @@
 // 도메인 타입을 반환하는 조회 함수. 페이지/훅은 Supabase 세부 구현 대신 이 함수를 쓴다.
 import { supabase } from "@/lib/supabase";
 import { toTeam, toGame, toScoreEntry } from "@/lib/mappers";
-import type { Team, Game, ScoreEntry } from "@/types";
+import type { Team, Game, ScoreEntry, Setting } from "@/types";
 
 export async function fetchTeams(): Promise<Team[]> {
   const { data, error } = await supabase
@@ -22,6 +22,12 @@ export async function fetchGames(): Promise<Game[]> {
     .order("id", { ascending: true }); // 시드 행은 created_at 이 같아 tie-breaker 없이는 update 때마다 순서가 뒤섞인다
   if (error) throw new Error("게임을 불러오지 못했습니다.");
   return (data ?? []).map(toGame);
+}
+
+export async function fetchSettings(): Promise<Setting[]> {
+  const { data, error } = await supabase.from("settings").select("*");
+  if (error) throw new Error("설정을 불러오지 못했습니다.");
+  return (data ?? []).map((r) => ({ key: r.key, value: r.value }));
 }
 
 export async function fetchScoreEntries(limit: number): Promise<ScoreEntry[]> {

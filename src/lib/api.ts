@@ -142,3 +142,15 @@ export async function clearGame(gameId: string): Promise<void> {
   const { error } = await supabase.rpc("clear_game", { p_game: gameId });
   if (error) fail("게임을 비우지 못했습니다.", error);
 }
+
+// ---------- 전역 설정 ----------
+// 스코어 가리기(게스트 순위 숨김). select 로 영향 행을 확인해
+// 마이그레이션 006 미적용(행 없음)도 조용히 넘어가지 않고 에러로 알린다.
+export async function setHideScores(hidden: boolean): Promise<void> {
+  const { data, error } = await supabase
+    .from("settings")
+    .update({ value: hidden })
+    .eq("key", "hide_scores")
+    .select("key");
+  if (error || !data?.length) fail("설정을 바꾸지 못했습니다.", error);
+}

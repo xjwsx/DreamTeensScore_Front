@@ -37,6 +37,11 @@ export interface User {
   role: Role;
 }
 
+export interface Setting {
+  key: string;
+  value: unknown; // jsonb — 사용처에서 좁힌다 (예: hide_scores 는 boolean)
+}
+
 export interface AuditLog {
   id: string;
   action: string;

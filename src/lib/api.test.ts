@@ -24,7 +24,14 @@ function makeBuilder(table: string) {
   b.update = vi.fn((patch: unknown) => {
     calls[`${table}.update`] = patch;
     const chain = {
-      eq: () => Promise.resolve({ error: updateError }),
+      // .eq() 는 그대로 await 하거나 .select() 로 이어갈 수 있다
+      eq: (col: string, val: unknown) => {
+        calls[`${table}.update.eq`] = [col, val];
+        return {
+          select: () => Promise.resolve({ data: updateError ? null : [{ id: "a" }], error: updateError }),
+          then: (res: (v: { error: typeof updateError }) => void) => res({ error: updateError }),
+        };
+      },
       is: () => ({ select: () => Promise.resolve({ data: [{ id: "a" }], error: updateError }) }),
     };
     return chain;
@@ -46,7 +53,7 @@ vi.mock("@/lib/supabase", () => ({
   },
 }));
 
-import { addScore, voidEntry, setTeamActive, setGameActive, createTeam, createGame, resetAll, setTeamGame, clearGame } from "@/lib/api";
+import { addScore, voidEntry, setTeamActive, setGameActive, createTeam, createGame, resetAll, setTeamGame, clearGame, setHideScores } from "@/lib/api";
 
 beforeEach(() => {
   for (const k of Object.keys(calls)) delete calls[k];
@@ -143,6 +150,18 @@ describe("setTeamGame", () => {
   it("passes through the raise exception message (P0001 — 정원 초과 등)", async () => {
     rpcError = { message: "이미 2팀이 참여 중이에요.", code: "P0001" };
     await expect(setTeamGame("t1", "g1")).rejects.toThrow("이미 2팀이 참여 중이에요.");
+  });
+});
+
+describe("setHideScores", () => {
+  it("updates the hide_scores settings row", async () => {
+    await setHideScores(true);
+    expect(calls["settings.update"]).toEqual({ value: true });
+    expect(calls["settings.update.eq"]).toEqual(["key", "hide_scores"]);
+  });
+  it("throws a Korean error on failure (마이그레이션 전 행 없음 포함)", async () => {
+    updateError = { message: "boom" };
+    await expect(setHideScores(false)).rejects.toThrow("설정을 바꾸지 못했습니다.");
   });
 });
 

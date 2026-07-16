@@ -5,6 +5,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // 시드 데이터는 한 insert 문으로 들어가 created_at 이 전부 같으므로,
 // tie-breaker 가 없으면 행이 update 될 때마다 목록 순서가 뒤섞인다.
 const orderCalls: Record<string, string[]> = {};
+const rowsByTable: Record<string, unknown[]> = {};
 
 function makeBuilder(table: string) {
   const chain: Record<string, unknown> = {};
@@ -14,7 +15,8 @@ function makeBuilder(table: string) {
     (orderCalls[table] ??= []).push(col);
     return chain;
   });
-  chain.then = (res: (v: { data: unknown[]; error: null }) => void) => res({ data: [], error: null });
+  chain.then = (res: (v: { data: unknown[]; error: null }) => void) =>
+    res({ data: rowsByTable[table] ?? [], error: null });
   return chain;
 }
 
@@ -22,10 +24,11 @@ vi.mock("@/lib/supabase", () => ({
   supabase: { from: (table: string) => makeBuilder(table) },
 }));
 
-import { fetchGames, fetchTeams } from "@/lib/queries";
+import { fetchGames, fetchTeams, fetchSettings } from "@/lib/queries";
 
 beforeEach(() => {
   for (const k of Object.keys(orderCalls)) delete orderCalls[k];
+  for (const k of Object.keys(rowsByTable)) delete rowsByTable[k];
 });
 
 describe("fetchGames", () => {
@@ -39,5 +42,15 @@ describe("fetchTeams", () => {
   it("orders by total_score, created_at with id tie-breaker", async () => {
     await fetchTeams();
     expect(orderCalls.teams).toEqual(["total_score", "created_at", "id"]);
+  });
+});
+
+describe("fetchSettings", () => {
+  it("maps rows to {key, value} 목록", async () => {
+    rowsByTable.settings = [{ key: "hide_scores", value: true, updated_at: "2026-07-16T00:00:00Z" }];
+    expect(await fetchSettings()).toEqual([{ key: "hide_scores", value: true }]);
+  });
+  it("returns [] when the table is empty (마이그레이션 전)", async () => {
+    expect(await fetchSettings()).toEqual([]);
   });
 });

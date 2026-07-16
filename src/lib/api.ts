@@ -133,5 +133,12 @@ export async function deleteGame(id: string, actorId: string | null): Promise<vo
 // gameId=null 이면 대기(미배치)로 이동.
 export async function setTeamGame(teamId: string, gameId: string | null): Promise<void> {
   const { error } = await supabase.rpc("set_team_game", { p_team: teamId, p_game: gameId });
-  if (error) fail("팀 위치를 바꾸지 못했습니다.", error);
+  // P0001 = 함수 안 raise exception(정원 초과 등) — 사용자용 한글 메시지이므로 그대로 전달
+  if (error) fail(error.code === "P0001" && error.message ? error.message : "팀 위치를 바꾸지 못했습니다.", error);
+}
+
+// 게임 종료: 그 게임에 있는 팀 전원을 대기로 (라운드 전환용, 원자적)
+export async function clearGame(gameId: string): Promise<void> {
+  const { error } = await supabase.rpc("clear_game", { p_game: gameId });
+  if (error) fail("게임을 비우지 못했습니다.", error);
 }

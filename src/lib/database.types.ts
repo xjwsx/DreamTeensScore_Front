@@ -50,6 +50,7 @@ export interface Database {
     Views: Record<string, never>;
     Functions: {
       set_team_game: { Args: { p_team: string; p_game: string | null }; Returns: undefined };
+      clear_game: { Args: { p_game: string }; Returns: undefined };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

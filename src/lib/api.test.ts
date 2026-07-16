@@ -7,7 +7,7 @@ const calls: Record<string, unknown> = {};
 let insertError: { message: string } | null = null;
 let updateError: { message: string } | null = null;
 let insertReturn: { id: string } | null = { id: "new-id" };
-let rpcError: { message: string } | null = null;
+let rpcError: { message: string; code?: string } | null = null;
 
 function makeBuilder(table: string) {
   const b: Record<string, unknown> = {};
@@ -46,7 +46,7 @@ vi.mock("@/lib/supabase", () => ({
   },
 }));
 
-import { addScore, voidEntry, setTeamActive, setGameActive, createTeam, createGame, resetAll, setTeamGame } from "@/lib/api";
+import { addScore, voidEntry, setTeamActive, setGameActive, createTeam, createGame, resetAll, setTeamGame, clearGame } from "@/lib/api";
 
 beforeEach(() => {
   for (const k of Object.keys(calls)) delete calls[k];
@@ -139,5 +139,20 @@ describe("setTeamGame", () => {
   it("throws a Korean error on failure", async () => {
     rpcError = { message: "denied" };
     await expect(setTeamGame("t1", "g1")).rejects.toThrow("팀 위치를 바꾸지 못했습니다.");
+  });
+  it("passes through the raise exception message (P0001 — 정원 초과 등)", async () => {
+    rpcError = { message: "이미 2팀이 참여 중이에요.", code: "P0001" };
+    await expect(setTeamGame("t1", "g1")).rejects.toThrow("이미 2팀이 참여 중이에요.");
+  });
+});
+
+describe("clearGame", () => {
+  it("calls clear_game rpc with the game id", async () => {
+    await clearGame("g1");
+    expect(calls["rpc.clear_game"]).toEqual({ p_game: "g1" });
+  });
+  it("throws a Korean error on failure", async () => {
+    rpcError = { message: "boom" };
+    await expect(clearGame("g1")).rejects.toThrow("게임을 비우지 못했습니다.");
   });
 });

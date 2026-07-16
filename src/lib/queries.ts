@@ -8,7 +8,8 @@ export async function fetchTeams(): Promise<Team[]> {
     .from("teams")
     .select("*")
     .order("total_score", { ascending: false })
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true }); // 시드 행은 created_at 이 같아 tie-breaker 없이는 update 때마다 순서가 뒤섞인다
   if (error) throw new Error("팀을 불러오지 못했습니다.");
   return (data ?? []).map(toTeam);
 }
@@ -17,7 +18,8 @@ export async function fetchGames(): Promise<Game[]> {
   const { data, error } = await supabase
     .from("games")
     .select("*")
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true }); // 시드 행은 created_at 이 같아 tie-breaker 없이는 update 때마다 순서가 뒤섞인다
   if (error) throw new Error("게임을 불러오지 못했습니다.");
   return (data ?? []).map(toGame);
 }

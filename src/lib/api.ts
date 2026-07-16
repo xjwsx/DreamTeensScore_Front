@@ -119,7 +119,7 @@ export async function createGame(name: string, emoji: string): Promise<void> {
   const { error } = await supabase.from("games").insert({ name, emoji });
   if (error) fail("게임을 추가하지 못했습니다.", error);
 }
-export async function updateGame(id: string, patch: Partial<{ name: string; emoji: string }>): Promise<void> {
+export async function updateGame(id: string, patch: Partial<{ name: string; emoji: string; floor: number }>): Promise<void> {
   const { error } = await supabase.from("games").update(patch).eq("id", id);
   if (error) fail("게임을 수정하지 못했습니다.", error);
 }

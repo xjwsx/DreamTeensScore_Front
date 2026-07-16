@@ -16,10 +16,11 @@ const Grid = styled.div`
   display: grid; grid-template-columns: 1fr; gap: 12px;
   @media (min-width: 768px) { grid-template-columns: repeat(2, 1fr); }
 `;
-const Card = styled(Glass)<{ $wait?: boolean }>`
+const Card = styled(Glass)`
   padding: 15px 16px;
-  ${({ $wait }) => $wait && "grid-column: 1 / -1;"}
 `;
+const WaitCard = styled(Card)` margin-bottom: 4px; `;
+const FloorTitle = styled.div` font-size: 15px; font-weight: 800; margin: 16px 2px 10px; `;
 const Head = styled.div` display: flex; align-items: center; gap: 9px; margin-bottom: 12px; `;
 const HeadEmoji = styled.span` font-size: 22px; `;
 const HeadName = styled.div` font-size: 16px; font-weight: 800; `;
@@ -51,6 +52,12 @@ const Sheet = styled.div`
   border-top: 1px solid rgba(255,255,255,.3);
 `;
 const SheetTitle = styled.div` font-size: 15px; font-weight: 800; margin-bottom: 14px; `;
+const SheetGroup = styled.div` font-size: 12px; font-weight: 800; color: rgba(255,255,255,.6); margin: 12px 3px 8px; `;
+const FLOORS = [
+  { floor: 1, label: "🏠 1층" },
+  { floor: 2, label: "🏢 2층" },
+];
+
 const Item = styled.button<{ $on?: boolean }>`
   width: 100%; display: flex; align-items: center; gap: 10px; text-align: left;
   padding: 14px 15px; border-radius: 16px; margin-bottom: 8px;
@@ -106,41 +113,59 @@ export default function Map() {
       <Title>맵</Title>
       <Sub>{canEdit ? "팀을 눌러 게임으로 이동하세요" : "각 게임에 있는 팀"}</Sub>
 
-      <Grid>
-        <Card $wait>
-          <Head>
-            <HeadEmoji>⏳</HeadEmoji>
-            <HeadName>대기</HeadName>
-            <Count>{waiting.length}팀</Count>
-          </Head>
-          {waiting.length ? <Chips>{waiting.map(renderChip)}</Chips> : <EmptyChips>대기 중인 팀 없음</EmptyChips>}
-        </Card>
+      <WaitCard>
+        <Head>
+          <HeadEmoji>⏳</HeadEmoji>
+          <HeadName>대기</HeadName>
+          <Count>{waiting.length}팀</Count>
+        </Head>
+        {waiting.length ? <Chips>{waiting.map(renderChip)}</Chips> : <EmptyChips>대기 중인 팀 없음</EmptyChips>}
+      </WaitCard>
 
-        {activeGames.map((g) => {
-          const here = activeTeams.filter((t) => t.currentGameId === g.id);
-          return (
-            <Card key={g.id}>
-              <Head>
-                <HeadEmoji>{g.emoji}</HeadEmoji>
-                <HeadName>{g.name}</HeadName>
-                <Count>{here.length}팀</Count>
-              </Head>
-              {here.length ? <Chips>{here.map(renderChip)}</Chips> : <EmptyChips>아직 없음</EmptyChips>}
-            </Card>
-          );
-        })}
-      </Grid>
+      {FLOORS.map(({ floor, label }) => {
+        const floorGames = activeGames.filter((g) => g.floor === floor);
+        if (!floorGames.length) return null;
+        return (
+          <section key={floor}>
+            <FloorTitle>{label}</FloorTitle>
+            <Grid>
+              {floorGames.map((g) => {
+                const here = activeTeams.filter((t) => t.currentGameId === g.id);
+                return (
+                  <Card key={g.id}>
+                    <Head>
+                      <HeadEmoji>{g.emoji}</HeadEmoji>
+                      <HeadName>{g.name}</HeadName>
+                      <Count>{here.length}팀</Count>
+                    </Head>
+                    {here.length ? <Chips>{here.map(renderChip)}</Chips> : <EmptyChips>아직 없음</EmptyChips>}
+                  </Card>
+                );
+              })}
+            </Grid>
+          </section>
+        );
+      })}
 
       {sheetTeam && (
         <Overlay onClick={() => setSheetTeam(null)}>
           <Sheet onClick={(e) => e.stopPropagation()}>
             <SheetTitle>{sheetTeam.emoji} {sheetTeam.name} 을(를) 어디로?</SheetTitle>
-            {activeGames.map((g) => (
-              <Item key={g.id} $on={sheetTeam.currentGameId === g.id} onClick={() => move(sheetTeam, g.id)}>
-                <span>{g.emoji}</span> {g.name}
-                {sheetTeam.currentGameId === g.id && <Check className="ck" size={18} />}
-              </Item>
-            ))}
+            {FLOORS.map(({ floor, label }) => {
+              const floorGames = activeGames.filter((g) => g.floor === floor);
+              if (!floorGames.length) return null;
+              return (
+                <div key={floor}>
+                  <SheetGroup>{label}</SheetGroup>
+                  {floorGames.map((g) => (
+                    <Item key={g.id} $on={sheetTeam.currentGameId === g.id} onClick={() => move(sheetTeam, g.id)}>
+                      <span>{g.emoji}</span> {g.name}
+                      {sheetTeam.currentGameId === g.id && <Check className="ck" size={18} />}
+                    </Item>
+                  ))}
+                </div>
+              );
+            })}
             <Item $on={!sheetTeam.currentGameId} onClick={() => move(sheetTeam, null)}>
               <span>⏳</span> 대기(배치 안 함)
               {!sheetTeam.currentGameId && <Check className="ck" size={18} />}

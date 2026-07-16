@@ -14,9 +14,9 @@ export interface Database {
         Relationships: [];
       };
       games: {
-        Row: { id: string; name: string; emoji: string; active: boolean; created_at: string };
-        Insert: { id?: string; name: string; emoji?: string; active?: boolean; created_at?: string };
-        Update: { id?: string; name?: string; emoji?: string; active?: boolean; created_at?: string };
+        Row: { id: string; name: string; emoji: string; active: boolean; floor: number; created_at: string };
+        Insert: { id?: string; name: string; emoji?: string; active?: boolean; floor?: number; created_at?: string };
+        Update: { id?: string; name?: string; emoji?: string; active?: boolean; floor?: number; created_at?: string };
         Relationships: [];
       };
       users: {

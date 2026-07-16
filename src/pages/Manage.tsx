@@ -47,6 +47,15 @@ const Switch = styled.button<{ $on?: boolean }>`
   background: ${({ $on }) => ($on ? "#22d3ee" : "rgba(255,255,255,.2)")};
   & > span { width: 20px; height: 20px; border-radius: 50%; background: #fff; display: block; }
 `;
+const FloorToggle = styled.div`
+  display: flex; flex-shrink: 0; border-radius: 11px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,.3);
+`;
+const FloorBtn = styled.button<{ $on?: boolean }>`
+  padding: 8px 9px; font-size: 12px; font-weight: 700;
+  color: ${({ $on }) => ($on ? "#0e7490" : "rgba(255,255,255,.75)")};
+  background: ${({ $on }) => ($on ? "#fff" : "rgba(255,255,255,.12)")};
+`;
 const DelBtn = styled.button`
   width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
@@ -184,6 +193,11 @@ export default function Manage() {
           <Row>
             <EmojiBtn onClick={() => void updateGame(g.id, { emoji: nextIn(GAME_EMOJIS, g.emoji) })}>{g.emoji}</EmojiBtn>
             <NameInput defaultValue={g.name} onBlur={(e) => { if (e.target.value !== g.name) void updateGame(g.id, { name: e.target.value }); }} />
+            <FloorToggle>
+              {[1, 2].map((f) => (
+                <FloorBtn key={f} $on={g.floor === f} onClick={() => { if (g.floor !== f) void updateGame(g.id, { floor: f }); }}>{f}층</FloorBtn>
+              ))}
+            </FloorToggle>
             <Switch $on={g.active} title={g.active ? "활성" : "비활성"} onClick={() => void setGameActive(g.id, !g.active, userId)}><span /></Switch>
             <DelBtn onClick={() => setDeleteTarget({ id: g.id, kind: "game", name: g.name })}>
               <X size={18} color="#fff" />

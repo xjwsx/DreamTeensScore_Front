@@ -16,6 +16,7 @@ export interface Game {
   name: string;
   emoji: string;
   active: boolean;
+  floor: number; // 게임이 위치한 층 (1 또는 2)
 }
 
 export interface ScoreEntry {

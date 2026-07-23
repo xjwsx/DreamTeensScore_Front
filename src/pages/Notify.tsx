@@ -1,7 +1,8 @@
 import { useState } from "react";
 import styled from "styled-components";
-import { BellRing, Send } from "lucide-react";
-import { sendAnnouncement } from "@/lib/api";
+import { BellRing, Send, Eye, EyeOff } from "lucide-react";
+import { sendAnnouncement, setHideScores } from "@/lib/api";
+import { useSettings } from "@/context/SettingsContext";
 import { Toast, useToast } from "@/components/Toast";
 
 const Title = styled.div` font-size: 26px; font-weight: 800; margin-bottom: 16px; `;
@@ -32,6 +33,17 @@ const SendBtn = styled.button`
   &:active { transform: scale(.98); }
   &:disabled { opacity: .5; }
 `;
+const Divider = styled.div` height: 1px; background: rgba(255,255,255,.18); margin: 26px 0 18px; `;
+// 스코어 가리기 토글. 가리는 중이면 반전 스타일로 상태를 드러낸다.
+const HideToggle = styled.button<{ $on: boolean }>`
+  width: 100%; padding: 15px; border-radius: 18px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-size: 15px; font-weight: 800;
+  color: ${({ $on }) => ($on ? "#fff" : "#0e7490")};
+  background: ${({ $on }) => ($on ? "rgba(255,255,255,.16)" : "#fff")};
+  border: 1px solid ${({ $on }) => ($on ? "rgba(255,255,255,.4)" : "transparent")};
+  transition: transform .12s ease; &:active { transform: scale(.98); }
+`;
 
 // 자주 쓰는 안내 문구. 탭하면 입력칸을 채운다.
 const PRESETS = ["프로그램 종료 20분 전", "프로그램 종료 10분 전", "프로그램 종료 5분 전", "곧 시작합니다!"];
@@ -47,9 +59,19 @@ export default function Notify() {
   const [message, setMessage] = useState("");
   const [durMin, setDurMin] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
+  const { hideScores } = useSettings();
   const { toast, notify } = useToast();
 
   const trimmed = message.trim();
+
+  const toggleHide = async () => {
+    try {
+      await setHideScores(!hideScores);
+      notify(hideScores ? "스코어를 공개했어요" : "게스트에게 스코어를 가렸어요");
+    } catch (e) {
+      notify(e instanceof Error ? e.message : "설정을 바꾸지 못했습니다.", true);
+    }
+  };
 
   const send = async () => {
     if (!trimmed || sending) return;
@@ -99,6 +121,15 @@ export default function Notify() {
         {durMin === null
           ? "접속 중인 모든 화면에 모달이 뜨고, 각자 확인 버튼을 눌러야 사라집니다."
           : `모든 화면에 ${durMin}분 카운트다운이 뜨고, 각자 확인 버튼을 눌러야 사라집니다.`}
+      </Label>
+
+      <Divider />
+      <Label>게스트 화면</Label>
+      <HideToggle $on={hideScores} onClick={() => void toggleHide()}>
+        {hideScores ? <><EyeOff size={17} /> 가리는 중 — 공개하기</> : <><Eye size={17} /> 스코어 가리기</>}
+      </HideToggle>
+      <Label style={{ marginTop: 10 }}>
+        가리면 게스트의 순위판·발표 화면에서 순위가 숨겨집니다.
       </Label>
     </>
   );

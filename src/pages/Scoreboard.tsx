@@ -1,17 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { Presentation, LogOut, Eye, EyeOff } from "lucide-react";
+import { Presentation, LogOut } from "lucide-react";
 import { useTeams } from "@/hooks/useTeams";
 import { useSettings } from "@/context/SettingsContext";
 import { useAuth } from "@/context/AuthContext";
-import { setHideScores } from "@/lib/api";
 import { TeamRankRow } from "@/components/TeamRankRow";
 import { rankTeams } from "@/lib/ranking";
 import { Glass } from "@/components/ui";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ConfirmModal } from "@/components/ConfirmModal";
-import { Toast, useToast } from "@/components/Toast";
 
 const Header = styled.div` display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; `;
 const Over = styled.div` font-size: 12px; font-weight: 800; letter-spacing: 2px; color: rgba(255,255,255,.7); `;
@@ -19,12 +17,6 @@ const Title = styled.div` font-size: 28px; font-weight: 800; `;
 const Pill = styled.button`
   display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #0e7490;
   background: #fff; border-radius: 16px; padding: 10px 14px;
-`;
-const Pills = styled.div` display: flex; flex-direction: column; align-items: flex-end; gap: 8px; `;
-const HidePill = styled(Pill)<{ $on?: boolean }>`
-  color: ${({ $on }) => ($on ? "#fff" : "#0e7490")};
-  background: ${({ $on }) => ($on ? "rgba(255,255,255,.18)" : "#fff")};
-  border: 1px solid ${({ $on }) => ($on ? "rgba(255,255,255,.4)" : "transparent")};
 `;
 const Secret = styled(Glass)` padding: 46px 20px; text-align: center; margin-top: 8px; `;
 const SecretEmoji = styled.div` font-size: 46px; margin-bottom: 12px; `;
@@ -42,7 +34,6 @@ export default function Scoreboard() {
   const { teams, loading } = useTeams();
   const { hideScores, loading: sLoading } = useSettings();
   const { role, logout } = useAuth();
-  const { toast, notify } = useToast();
   const [confirmLogout, setConfirmLogout] = useState(false);
   const activeTeams = teams.filter((t) => t.active);
   const maxScore = activeTeams.reduce((m, t) => Math.max(m, t.totalScore), 0);
@@ -52,31 +43,14 @@ export default function Scoreboard() {
 
   const hidden = hideScores && role === "viewer";
 
-  async function toggleHide() {
-    try {
-      await setHideScores(!hideScores);
-      notify(hideScores ? "스코어를 공개했어요" : "게스트에게 스코어를 가렸어요");
-    } catch (e) {
-      notify(e instanceof Error ? e.message : "설정을 바꾸지 못했습니다.", true);
-    }
-  }
-
   return (
     <>
-      <Toast toast={toast} />
       <Header>
         <div>
           <Over>SUMMER RETREAT · TEENS</Over>
           <Title>틴즈 스코어보드</Title>
         </div>
-        <Pills>
-          <Pill onClick={() => nav("/present")}><Presentation size={16} /> 발표 모드</Pill>
-          {role === "admin" && (
-            <HidePill $on={hideScores} onClick={() => void toggleHide()}>
-              {hideScores ? <><EyeOff size={16} /> 가리는 중 — 공개하기</> : <><Eye size={16} /> 스코어 가리기</>}
-            </HidePill>
-          )}
-        </Pills>
+        <Pill onClick={() => nav("/present")}><Presentation size={16} /> 발표 모드</Pill>
       </Header>
 
       {hidden ? (

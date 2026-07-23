@@ -51,9 +51,12 @@
   `value = { id: newId(), message, deadline }`. 그 외(영향 행 확인·에러 처리)는 동일.
 
 ### `src/pages/Notify.tsx`
-- **기한 칩** 한 줄 추가: `[20분] [10분] [5분] [카운트다운 없음]`. 선택 상태 관리.
-- 보낼 때 선택 칩이 분값이면 `deadline = Date.now() + N*60_000`, "없음"이면 `null`.
-- 기존 문구 프리셋은 메시지 입력 보조로 유지.
+- **문구 프리셋이 기한을 함께 갖는다**: `PRESETS = [{message, min}]`
+  (예: "프로그램 종료 20분 전" → 20분, "곧 시작합니다!" → null). 별도 기한 칩 줄은 두지
+  않아 실수 여지를 없앤다.
+- 프리셋을 탭하면 메시지가 채워지고, 선택된 프리셋(문구 일치)의 `min` 을 기한으로 쓴다.
+  보낼 때 `deadline = min === null ? null : Date.now() + min*60_000`.
+- 직접 입력한 커스텀 문구는 어떤 프리셋과도 안 맞으므로 카운트다운 없음(null).
 
 ### `src/components/AnnouncementModal.tsx`
 - **카운트다운(deadline 있음)**:

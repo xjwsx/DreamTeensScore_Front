@@ -8,14 +8,10 @@ import { Toast, useToast } from "@/components/Toast";
 const Title = styled.div` font-size: 26px; font-weight: 800; margin-bottom: 16px; `;
 const Label = styled.div` font-size: 13px; font-weight: 700; color: rgba(255,255,255,.7); margin: 4px 0 8px; `;
 const Presets = styled.div` display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 18px; `;
-const Chip = styled.button`
+// 문구 칩. 각 칩이 문구+카운트다운 기한을 함께 갖는다. 선택된 칩은 흰 배경으로 강조한다
+// ($active 는 DOM 으로 새지 않는 transient prop).
+const Chip = styled.button<{ $active: boolean }>`
   padding: 11px 16px; border-radius: 999px; font-size: 14px; font-weight: 700; white-space: nowrap;
-  color: #fff; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.28);
-  transition: transform .12s ease; &:active { transform: scale(.95); }
-`;
-// 기한 칩. 선택된 칩은 흰 배경으로 강조한다($active 는 DOM 으로 새지 않는 transient prop).
-const DurChip = styled.button<{ $active: boolean }>`
-  padding: 11px 16px; border-radius: 999px; font-size: 14px; font-weight: 800; white-space: nowrap;
   border: 1px solid rgba(255,255,255,.28); transition: transform .12s ease;
   color: ${({ $active }) => ($active ? "#0e7490" : "#fff")};
   background: ${({ $active }) => ($active ? "#fff" : "rgba(255,255,255,.14)")};
@@ -45,24 +41,24 @@ const HideToggle = styled.button<{ $on: boolean }>`
   transition: transform .12s ease; &:active { transform: scale(.98); }
 `;
 
-// 자주 쓰는 안내 문구. 탭하면 입력칸을 채운다.
-const PRESETS = ["프로그램 종료 20분 전", "프로그램 종료 10분 전", "프로그램 종료 5분 전", "곧 시작합니다!"];
-// 카운트다운 기한(분). null = 카운트다운 없는 텍스트 알람.
-const DURATIONS: { label: string; min: number | null }[] = [
-  { label: "20분", min: 20 },
-  { label: "10분", min: 10 },
-  { label: "5분", min: 5 },
-  { label: "없음", min: null },
+// 자주 쓰는 문구. 각 문구가 카운트다운 기한(분)을 함께 갖는다. min=null 은 카운트다운 없음.
+// 탭하면 문구가 입력칸에 채워지고, 보내면 그 문구의 기한으로 자동 카운트다운된다.
+const PRESETS: { message: string; min: number | null }[] = [
+  { message: "프로그램 종료 20분 전", min: 20 },
+  { message: "프로그램 종료 10분 전", min: 10 },
+  { message: "프로그램 종료 5분 전", min: 5 },
+  { message: "곧 시작합니다!", min: null },
 ];
 
 export default function Notify() {
   const [message, setMessage] = useState("");
-  const [durMin, setDurMin] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
   const { hideScores } = useSettings();
   const { toast, notify } = useToast();
 
   const trimmed = message.trim();
+  // 선택된 프리셋(문구 일치)의 기한을 쓴다. 직접 입력한 커스텀 문구는 카운트다운 없음.
+  const durMin = PRESETS.find((p) => p.message === message)?.min ?? null;
 
   const toggleHide = async () => {
     try {
@@ -93,18 +89,12 @@ export default function Notify() {
     <>
       <Toast toast={toast} />
       <Title>알림 보내기</Title>
-      <Label>카운트다운 기한</Label>
-      <Presets>
-        {DURATIONS.map((d) => (
-          <DurChip key={d.label} $active={durMin === d.min} onClick={() => setDurMin(d.min)}>
-            {d.label}
-          </DurChip>
-        ))}
-      </Presets>
-      <Label>자주 쓰는 문구</Label>
+      <Label>자주 쓰는 문구 (선택하면 기한도 함께 설정)</Label>
       <Presets>
         {PRESETS.map((p) => (
-          <Chip key={p} onClick={() => setMessage(p)}>{p}</Chip>
+          <Chip key={p.message} $active={message === p.message} onClick={() => setMessage(p.message)}>
+            {p.message}
+          </Chip>
         ))}
       </Presets>
       <Label>메시지</Label>

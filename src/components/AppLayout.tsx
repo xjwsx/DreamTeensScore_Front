@@ -2,6 +2,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import { Screen, Blob, Content } from "@/components/ui";
 import { TabBar } from "@/components/TabBar";
+import { AnnouncementModal } from "@/components/AnnouncementModal";
 
 // 탭바 위 여백 확보용 스페이서. 내용이 짧으면 늘어나 탭바를 화면 바닥에 붙이고,
 // 내용이 길어도(예: 맵의 게임 카드) min-height 로 탭바와 카드 사이 여백을 항상 유지한다.
@@ -25,6 +26,7 @@ export function AppLayout() {
         <Outlet />
         <TabSpacer />
         <TabBar />
+        <AnnouncementModal />
       </Content>
     </Screen>
   );

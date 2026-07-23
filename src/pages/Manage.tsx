@@ -47,6 +47,10 @@ const Switch = styled.button<{ $on?: boolean }>`
   background: ${({ $on }) => ($on ? "#22d3ee" : "rgba(255,255,255,.2)")};
   & > span { width: 20px; height: 20px; border-radius: 50%; background: #fff; display: block; }
 `;
+const RoomInput = styled(NameInput)`
+  margin-top: 8px; width: 100%; font-size: 13.5px; padding: 9px 13px;
+  &::placeholder { color: rgba(255,255,255,.45); }
+`;
 const FloorToggle = styled.div`
   display: flex; flex-shrink: 0; border-radius: 11px; overflow: hidden;
   border: 1px solid rgba(255,255,255,.3);
@@ -203,6 +207,11 @@ export default function Manage() {
               <X size={18} color="#fff" />
             </DelBtn>
           </Row>
+          <RoomInput
+            defaultValue={g.room}
+            placeholder="위치 (예: 201호, 소예배실)"
+            onBlur={(e) => { if (e.target.value !== g.room) void updateGame(g.id, { room: e.target.value }); }}
+          />
         </Card>
       ))}
       </CardGrid>

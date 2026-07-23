@@ -8,8 +8,8 @@ export function toTeam(r: TeamRow): Team {
 }
 
 export function toGame(r: GameRow): Game {
-  // floor ?? 1: 004 마이그레이션이 아직 적용 안 된 DB에서도 게임이 맵에서 사라지지 않게
-  return { id: r.id, name: r.name, emoji: r.emoji, active: r.active, floor: r.floor ?? 1 };
+  // floor ?? 1, room ?? "": 004·007 마이그레이션이 아직 적용 안 된 DB 방어
+  return { id: r.id, name: r.name, emoji: r.emoji, active: r.active, floor: r.floor ?? 1, room: r.room ?? "" };
 }
 
 export function toScoreEntry(r: ScoreEntryRow): ScoreEntry {

@@ -19,15 +19,18 @@ describe("toTeam", () => {
 });
 
 describe("toGame", () => {
-  const row: GameRow = { id: "g1", name: "보물찾기", emoji: "🗺️", active: true, floor: 1, created_at: "2026-07-07T00:00:00Z" };
-  it("maps id/name/emoji/active/floor", () => {
-    expect(toGame(row)).toEqual({ id: "g1", name: "보물찾기", emoji: "🗺️", active: true, floor: 1 });
+  const row: GameRow = { id: "g1", name: "보물찾기", emoji: "🗺️", active: true, floor: 1, room: "201호", created_at: "2026-07-07T00:00:00Z" };
+  it("maps id/name/emoji/active/floor/room", () => {
+    expect(toGame(row)).toEqual({ id: "g1", name: "보물찾기", emoji: "🗺️", active: true, floor: 1, room: "201호" });
   });
   it("maps floor 2 (2층 게임)", () => {
     expect(toGame({ ...row, floor: 2 }).floor).toBe(2);
   });
   it("defaults floor to 1 when the column is missing (004 마이그레이션 전 DB)", () => {
     expect(toGame({ ...row, floor: undefined as unknown as number }).floor).toBe(1);
+  });
+  it("defaults room to empty string when the column is missing (007 마이그레이션 전 DB)", () => {
+    expect(toGame({ ...row, room: undefined as unknown as string }).room).toBe("");
   });
 });
 

@@ -26,6 +26,10 @@ const FloorTitle = styled.div` font-size: 15px; font-weight: 800; margin: 16px 2
 const Head = styled.div` display: flex; align-items: center; gap: 9px; margin-bottom: 12px; `;
 const HeadEmoji = styled.span` font-size: 22px; `;
 const HeadName = styled.div` font-size: 16px; font-weight: 800; `;
+const HeadRoom = styled.span`
+  font-size: 12px; font-weight: 700; color: rgba(255,255,255,.65);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+`;
 const Count = styled.div<{ $full?: boolean }>`
   margin-left: auto; font-size: 12px; font-weight: 800; border-radius: 12px; padding: 4px 9px;
   /* 꽉 찬 게임은 흐린 배지 — 빈 게임의 흰 배지가 눈에 띄어 "어디가 비었나"를 맵에서 바로 찾게 */
@@ -76,6 +80,7 @@ const Item = styled.button<{ $on?: boolean; $full?: boolean }>`
   cursor: ${({ $full }) => ($full ? "default" : "pointer")};
   & .ck { margin-left: auto; }
   & .full { margin-left: auto; font-size: 11.5px; font-weight: 800; color: rgba(255,255,255,.85); }
+  & .room { font-size: 12px; font-weight: 700; opacity: .65; }
 `;
 
 export default function Map() {
@@ -168,6 +173,7 @@ export default function Map() {
                     <Head>
                       <HeadEmoji>{g.emoji}</HeadEmoji>
                       <HeadName>{g.name}</HeadName>
+                      {g.room && <HeadRoom>{g.room}</HeadRoom>}
                       <Count $full={here.length >= MAX_TEAMS_PER_GAME}>{here.length}/{MAX_TEAMS_PER_GAME}팀</Count>
                       {canEdit && here.length > 0 && <EndBtn onClick={() => setEndTarget(g)}>종료</EndBtn>}
                     </Head>
@@ -196,6 +202,7 @@ export default function Map() {
                     return (
                       <Item key={g.id} $on={on} $full={full} disabled={full} onClick={() => move(sheetTeam, g.id)}>
                         <span>{g.emoji}</span> {g.name}
+                        {g.room && <span className="room">{g.room}</span>}
                         {on && <Check className="ck" size={18} />}
                         {full && <span className="full">가득 참</span>}
                       </Item>

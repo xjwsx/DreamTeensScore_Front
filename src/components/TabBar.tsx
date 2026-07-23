@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import styled from "styled-components";
-import { Trophy, Plus, Clock, Settings, MapPin } from "lucide-react";
+import { Trophy, Plus, Clock, Settings, MapPin, BellRing } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import type { SessionRole } from "@/lib/auth";
 
@@ -25,6 +25,7 @@ const TABS: TabDef[] = [
   { to: "/input", label: "입력", icon: Plus, roles: ["admin", "staff"] },
   { to: "/log", label: "기록", icon: Clock, roles: ["admin", "staff"] },
   { to: "/manage", label: "팀·게임", icon: Settings, roles: ["admin"] },
+  { to: "/notify", label: "알림", icon: BellRing, roles: ["admin"] },
 ];
 
 export function TabBar() {

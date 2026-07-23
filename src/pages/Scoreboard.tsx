@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { Presentation, LogOut, Eye, EyeOff } from "lucide-react";
 import { useTeams } from "@/hooks/useTeams";
-import { useSettings } from "@/hooks/useSettings";
+import { useSettings } from "@/context/SettingsContext";
 import { useAuth } from "@/context/AuthContext";
 import { setHideScores } from "@/lib/api";
 import { TeamRankRow } from "@/components/TeamRankRow";

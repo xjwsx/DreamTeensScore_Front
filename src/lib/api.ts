@@ -7,6 +7,14 @@ function fail(msg: string, error: unknown): never {
   throw new Error(msg);
 }
 
+// crypto.randomUUID 는 보안 컨텍스트(https/localhost)에서만 존재한다.
+// 현장 LAN(http)에서도 동작하도록 폴백을 둔다.
+function newId(): string {
+  const c = globalThis.crypto;
+  if (c && typeof c.randomUUID === "function") return c.randomUUID();
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export async function addScore(
   teamId: string, gameId: string | null, points: number, createdBy: string | null
 ): Promise<string> {
@@ -153,4 +161,17 @@ export async function setHideScores(hidden: boolean): Promise<void> {
     .eq("key", "hide_scores")
     .select("key");
   if (error || !data?.length) fail("설정을 바꾸지 못했습니다.", error);
+}
+
+// 브로드캐스트 알람: announcement 행을 새 id + 메시지로 갱신한다.
+// 접속 중인 클라이언트가 새 id 를 감지해 모달을 띄운다(수신 로직은 AnnouncementModal).
+// setHideScores 처럼 .select() 로 영향 행을 확인해 마이그레이션 미적용(행 없음)을 에러로 알린다.
+export async function sendAnnouncement(message: string): Promise<void> {
+  const value = { id: newId(), message };
+  const { data, error } = await supabase
+    .from("settings")
+    .update({ value })
+    .eq("key", "announcement")
+    .select("key");
+  if (error || !data?.length) fail("알람을 보내지 못했습니다.", error);
 }

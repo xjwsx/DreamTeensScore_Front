@@ -177,16 +177,22 @@ describe("clearGame", () => {
 });
 
 describe("sendAnnouncement", () => {
-  it("updates the announcement row with a fresh id and the message", async () => {
-    await sendAnnouncement("곧 시작합니다!");
-    const patch = calls["settings.update"] as { value: { id: string; message: string } };
+  it("updates the announcement row with a fresh id, message, and null deadline", async () => {
+    await sendAnnouncement("곧 시작합니다!", null);
+    const patch = calls["settings.update"] as { value: { id: string; message: string; deadline: number | null } };
     expect(patch.value.message).toBe("곧 시작합니다!");
+    expect(patch.value.deadline).toBeNull();
     expect(typeof patch.value.id).toBe("string");
     expect(patch.value.id.length).toBeGreaterThan(0);
     expect(calls["settings.update.eq"]).toEqual(["key", "announcement"]);
   });
+  it("carries a numeric deadline through to the payload", async () => {
+    await sendAnnouncement("프로그램 종료까지", 1700000000000);
+    const patch = calls["settings.update"] as { value: { deadline: number | null } };
+    expect(patch.value.deadline).toBe(1700000000000);
+  });
   it("throws a Korean error on failure (마이그레이션 전 행 없음 포함)", async () => {
     updateError = { message: "boom" };
-    await expect(sendAnnouncement("x")).rejects.toThrow("알람을 보내지 못했습니다.");
+    await expect(sendAnnouncement("x", null)).rejects.toThrow("알람을 보내지 못했습니다.");
   });
 });

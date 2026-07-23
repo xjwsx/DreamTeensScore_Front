@@ -12,6 +12,14 @@ const Chip = styled.button`
   color: #fff; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.28);
   transition: transform .12s ease; &:active { transform: scale(.95); }
 `;
+// 기한 칩. 선택된 칩은 흰 배경으로 강조한다($active 는 DOM 으로 새지 않는 transient prop).
+const DurChip = styled.button<{ $active: boolean }>`
+  padding: 11px 16px; border-radius: 999px; font-size: 14px; font-weight: 800; white-space: nowrap;
+  border: 1px solid rgba(255,255,255,.28); transition: transform .12s ease;
+  color: ${({ $active }) => ($active ? "#0e7490" : "#fff")};
+  background: ${({ $active }) => ($active ? "#fff" : "rgba(255,255,255,.14)")};
+  &:active { transform: scale(.95); }
+`;
 const Input = styled.textarea`
   width: 100%; min-height: 84px; resize: vertical; padding: 14px 16px; border-radius: 18px;
   font-size: 16px; font-weight: 600; line-height: 1.4; color: #0e7490; background: #fff; border: none;
@@ -27,9 +35,17 @@ const SendBtn = styled.button`
 
 // 자주 쓰는 안내 문구. 탭하면 입력칸을 채운다.
 const PRESETS = ["프로그램 종료 20분 전", "프로그램 종료 10분 전", "프로그램 종료 5분 전", "곧 시작합니다!"];
+// 카운트다운 기한(분). null = 카운트다운 없는 텍스트 알람.
+const DURATIONS: { label: string; min: number | null }[] = [
+  { label: "20분", min: 20 },
+  { label: "10분", min: 10 },
+  { label: "5분", min: 5 },
+  { label: "없음", min: null },
+];
 
 export default function Notify() {
   const [message, setMessage] = useState("");
+  const [durMin, setDurMin] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
   const { toast, notify } = useToast();
 
@@ -39,7 +55,9 @@ export default function Notify() {
     if (!trimmed || sending) return;
     setSending(true);
     try {
-      await sendAnnouncement(trimmed);
+      // 선택한 분값이 있으면 지금부터 N분 뒤를 종료 시각으로. 모든 화면이 이 시각을 공유한다.
+      const deadline = durMin === null ? null : Date.now() + durMin * 60_000;
+      await sendAnnouncement(trimmed, deadline);
       notify("알람을 보냈어요");
       setMessage("");
     } catch (e) {
@@ -53,6 +71,14 @@ export default function Notify() {
     <>
       <Toast toast={toast} />
       <Title>알림 보내기</Title>
+      <Label>카운트다운 기한</Label>
+      <Presets>
+        {DURATIONS.map((d) => (
+          <DurChip key={d.label} $active={durMin === d.min} onClick={() => setDurMin(d.min)}>
+            {d.label}
+          </DurChip>
+        ))}
+      </Presets>
       <Label>자주 쓰는 문구</Label>
       <Presets>
         {PRESETS.map((p) => (
@@ -70,7 +96,9 @@ export default function Notify() {
       </SendBtn>
       <Label style={{ marginTop: 14 }}>
         <BellRing size={13} style={{ verticalAlign: "-2px", marginRight: 4 }} />
-        접속 중인 모든 화면에 모달이 뜨고, 각자 확인 버튼을 눌러야 사라집니다.
+        {durMin === null
+          ? "접속 중인 모든 화면에 모달이 뜨고, 각자 확인 버튼을 눌러야 사라집니다."
+          : `모든 화면에 ${durMin}분 카운트다운이 뜨고, 각자 확인 버튼을 눌러야 사라집니다.`}
       </Label>
     </>
   );

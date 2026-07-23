@@ -163,11 +163,12 @@ export async function setHideScores(hidden: boolean): Promise<void> {
   if (error || !data?.length) fail("설정을 바꾸지 못했습니다.", error);
 }
 
-// 브로드캐스트 알람: announcement 행을 새 id + 메시지로 갱신한다.
+// 브로드캐스트 알람: announcement 행을 새 id + 메시지 + 기한으로 갱신한다.
+// deadline(epoch ms)이 있으면 모든 화면이 같은 종료 시각으로 카운트다운, null 이면 텍스트 알람.
 // 접속 중인 클라이언트가 새 id 를 감지해 모달을 띄운다(수신 로직은 AnnouncementModal).
 // setHideScores 처럼 .select() 로 영향 행을 확인해 마이그레이션 미적용(행 없음)을 에러로 알린다.
-export async function sendAnnouncement(message: string): Promise<void> {
-  const value = { id: newId(), message };
+export async function sendAnnouncement(message: string, deadline: number | null): Promise<void> {
+  const value = { id: newId(), message, deadline };
   const { data, error } = await supabase
     .from("settings")
     .update({ value })

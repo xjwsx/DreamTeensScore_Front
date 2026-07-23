@@ -2,7 +2,22 @@ import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { BellRing } from "lucide-react";
 import { useSettings } from "@/context/SettingsContext";
-import { shouldShowAnnouncement } from "@/lib/announcement";
+import { shouldShowAnnouncement, formatRemaining, type Announcement } from "@/lib/announcement";
+
+// 확인한 카운트다운 id 를 세션에 남겨 새로고침해도 다시 뜨지 않게 한다.
+// (아직 안 본 late-joiner 에겐 정상적으로 뜬다.) 현재 알람은 항상 1개라 최신 id 하나면 충분.
+const DISMISS_KEY = "announcement-dismissed-id";
+function readDismissed(): string | null {
+  try { return sessionStorage.getItem(DISMISS_KEY); } catch { return null; }
+}
+function writeDismissed(id: string) {
+  try { sessionStorage.setItem(DISMISS_KEY, id); } catch { /* 무시 */ }
+}
+
+// deadline 이 있고 아직 미래면 "활성 카운트다운" — 늦게 접속한 화면도 띄워야 한다.
+function isActiveCountdown(a: Announcement | null): boolean {
+  return !!a && a.deadline !== null && a.deadline > Date.now();
+}
 
 const Backdrop = styled.div`
   position: fixed;
@@ -38,6 +53,20 @@ const Msg = styled.div`
   line-height: 1.4;
   word-break: keep-all;
 `;
+const Countdown = styled.div`
+  margin-top: 12px;
+  font-size: 46px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+  small {
+    display: block;
+    margin-top: 2px;
+    font-size: 14px;
+    font-weight: 700;
+    opacity: 0.75;
+  }
+`;
 const ConfirmBtn = styled.button`
   width: 100%;
   margin-top: 22px;
@@ -54,46 +83,67 @@ const ConfirmBtn = styled.button`
 `;
 
 /**
- * 브로드캐스트 알람 수신 모달. useSettings 의 announcement 를 구독하고,
- * 화면에 붙어 있는 동안 새로 도착한 id 만 띄운다. 자동으로 닫히지 않으며,
- * "확인" 버튼을 눌러야 사라진다(백드롭/카드 탭으로는 닫히지 않음).
- * 미확인 상태에서 새 알람이 오면 이전 메시지를 최신 것으로 교체한다(화면엔 항상 1개).
- * 마운트 시점의 값은 "이미 본 것"으로 저장해 새로고침·뒤늦은 접속에는 뜨지 않는다.
+ * 브로드캐스트 알람 수신 모달. useSettings 의 announcement 를 구독한다.
+ * - 카운트다운 알람(deadline 있음): 모든 화면이 같은 종료 시각으로 mm:ss 남은 시간을
+ *   1초마다 갱신. 활성(미래)이면 늦게 접속한 화면도 마운트 시 띄운다. 0 에 닿으면
+ *   00:00 에서 멈추고, 확인을 눌러야 닫힌다(확인 id 는 세션에 남겨 새로고침 재표시 방지).
+ * - 텍스트 알람(deadline 없음): 접속 중 새로 도착한 것만 띄운다(마운트 값은 "이미 본 것").
+ * 미확인 중 새 알람이 오면 최신 것으로 교체(누적 없음). 백드롭/카드 탭으로는 닫히지 않는다.
  * AppLayout·Present 에 각각 마운트(동시 렌더 없음).
  */
 export function AnnouncementModal() {
   const { announcement, loading } = useSettings();
   const id = announcement?.id ?? "";
   const message = announcement?.message ?? "";
+  const deadline = announcement?.deadline ?? null;
 
   const lastId = useRef<string | null>(null);
   const initialized = useRef(false);
-  const [shownMsg, setShownMsg] = useState<string | null>(null);
+  const [shown, setShown] = useState<Announcement | null>(null);
+  const [, forceTick] = useState(0);
 
   useEffect(() => {
     if (loading) return;
-    // 첫 정착 로드: 현재 값을 "이미 본 것"으로 저장만 하고 띄우지 않는다.
+    const current: Announcement | null = id === "" ? null : { id, message, deadline };
+    // 첫 정착 로드.
     if (!initialized.current) {
       initialized.current = true;
       lastId.current = id;
+      // 늦게 접속: 활성 카운트다운이고 이 세션에서 확인하지 않았으면 띄운다.
+      if (isActiveCountdown(current) && current!.id !== readDismissed()) setShown(current);
       return;
     }
-    const next = id === "" ? null : { id, message };
-    // 새 알람이 오면 미확인 메시지를 최신 것으로 교체한다(누적하지 않음).
-    if (shouldShowAnnouncement(lastId.current, next)) {
+    // 접속 중 새로 도착: 텍스트·카운트다운 모두 최신 것으로 교체해 띄운다.
+    if (shouldShowAnnouncement(lastId.current, current)) {
       lastId.current = id;
-      setShownMsg(message);
+      setShown(current);
     }
-  }, [id, message, loading]);
+  }, [id, message, deadline, loading]);
 
-  const dismiss = () => setShownMsg(null);
+  // 카운트다운이 떠 있는 동안 1초마다 남은 시간을 다시 그린다. 0 이하면 멈춘다(00:00 유지).
+  useEffect(() => {
+    if (!shown || shown.deadline === null || shown.deadline <= Date.now()) return;
+    const t = window.setInterval(() => {
+      forceTick((n) => n + 1);
+      if (shown.deadline !== null && shown.deadline <= Date.now()) window.clearInterval(t);
+    }, 1000);
+    return () => window.clearInterval(t);
+  }, [shown]);
 
-  if (shownMsg === null) return null;
+  // 확인 시 카운트다운 알람은 id 를 세션에 남겨 새로고침 재표시를 막는다.
+  const dismiss = () => {
+    if (shown && shown.deadline !== null) writeDismissed(shown.id);
+    setShown(null);
+  };
+
+  if (shown === null) return null;
+  const remaining = shown.deadline !== null ? formatRemaining(shown.deadline - Date.now()) : null;
   return (
     <Backdrop>
       <Card>
         <IconWrap><BellRing size={34} color="#fbbf24" /></IconWrap>
-        <Msg>{shownMsg}</Msg>
+        <Msg>{shown.message}</Msg>
+        {remaining && <Countdown>{remaining}<small>남음</small></Countdown>}
         <ConfirmBtn onClick={dismiss}>확인</ConfirmBtn>
       </Card>
     </Backdrop>

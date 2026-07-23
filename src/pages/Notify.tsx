@@ -26,7 +26,7 @@ const SendBtn = styled.button`
 `;
 
 // 자주 쓰는 안내 문구. 탭하면 입력칸을 채운다.
-const PRESETS = ["30분 남았습니다!", "10분 남았습니다!", "5분 남았습니다!", "곧 시작합니다!"];
+const PRESETS = ["프로그램 종료 20분 전", "프로그램 종료 10분 전", "프로그램 종료 5분 전", "곧 시작합니다!"];
 
 export default function Notify() {
   const [message, setMessage] = useState("");

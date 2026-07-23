@@ -6,7 +6,7 @@
 -- ============================================================
 
 -- announcement = { id, message }. admin 이 보낼 때마다 id 가 바뀌고,
--- 접속 중인 클라이언트는 새 id 를 감지해 모달을 띄운다(3.5초 후 자동 소멸).
+-- 접속 중인 클라이언트는 새 id 를 감지해 모달을 띄운다(확인 버튼을 눌러야 닫힘).
 insert into public.settings (key, value)
 values ('announcement', '{"id":"","message":""}'::jsonb)
 on conflict (key) do nothing;

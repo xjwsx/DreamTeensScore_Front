@@ -4,9 +4,6 @@ import { BellRing } from "lucide-react";
 import { useSettings } from "@/context/SettingsContext";
 import { shouldShowAnnouncement } from "@/lib/announcement";
 
-// 자동 소멸까지의 시간(ms). 짧게 떴다 사라지는 일시적 알람.
-const AUTO_DISMISS_MS = 3500;
-
 const Backdrop = styled.div`
   position: fixed;
   inset: 0;
@@ -41,12 +38,28 @@ const Msg = styled.div`
   line-height: 1.4;
   word-break: keep-all;
 `;
+const ConfirmBtn = styled.button`
+  width: 100%;
+  margin-top: 22px;
+  padding: 14px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0e7490;
+  background: #fff;
+  transition: transform 0.12s ease;
+  &:active {
+    transform: scale(0.97);
+  }
+`;
 
 /**
  * 브로드캐스트 알람 수신 모달. useSettings 의 announcement 를 구독하고,
- * 화면에 붙어 있는 동안 새로 도착한 id 만 띄운 뒤 AUTO_DISMISS_MS 후 자동으로 닫는다.
+ * 화면에 붙어 있는 동안 새로 도착한 id 만 띄운다. 자동으로 닫히지 않으며,
+ * "확인" 버튼을 눌러야 사라진다(백드롭/카드 탭으로는 닫히지 않음).
+ * 미확인 상태에서 새 알람이 오면 이전 메시지를 최신 것으로 교체한다(화면엔 항상 1개).
  * 마운트 시점의 값은 "이미 본 것"으로 저장해 새로고침·뒤늦은 접속에는 뜨지 않는다.
- * 백드롭/카드 탭하면 즉시 닫힌다. AppLayout·Present 에 각각 마운트(동시 렌더 없음).
+ * AppLayout·Present 에 각각 마운트(동시 렌더 없음).
  */
 export function AnnouncementModal() {
   const { announcement, loading } = useSettings();
@@ -55,7 +68,6 @@ export function AnnouncementModal() {
 
   const lastId = useRef<string | null>(null);
   const initialized = useRef(false);
-  const timer = useRef<number>();
   const [shownMsg, setShownMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,28 +79,22 @@ export function AnnouncementModal() {
       return;
     }
     const next = id === "" ? null : { id, message };
+    // 새 알람이 오면 미확인 메시지를 최신 것으로 교체한다(누적하지 않음).
     if (shouldShowAnnouncement(lastId.current, next)) {
       lastId.current = id;
       setShownMsg(message);
-      window.clearTimeout(timer.current);
-      timer.current = window.setTimeout(() => setShownMsg(null), AUTO_DISMISS_MS);
     }
   }, [id, message, loading]);
 
-  useEffect(() => () => window.clearTimeout(timer.current), []);
-
-  // 수동 닫기 시 대기 중인 자동 소멸 타이머도 함께 정리한다(중복 실행 방지).
-  const dismiss = () => {
-    window.clearTimeout(timer.current);
-    setShownMsg(null);
-  };
+  const dismiss = () => setShownMsg(null);
 
   if (shownMsg === null) return null;
   return (
-    <Backdrop onClick={dismiss}>
-      <Card onClick={dismiss}>
+    <Backdrop>
+      <Card>
         <IconWrap><BellRing size={34} color="#fbbf24" /></IconWrap>
         <Msg>{shownMsg}</Msg>
+        <ConfirmBtn onClick={dismiss}>확인</ConfirmBtn>
       </Card>
     </Backdrop>
   );

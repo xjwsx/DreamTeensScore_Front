@@ -70,7 +70,7 @@ export default function Notify() {
       </SendBtn>
       <Label style={{ marginTop: 14 }}>
         <BellRing size={13} style={{ verticalAlign: "-2px", marginRight: 4 }} />
-        접속 중인 모든 화면에 모달이 떴다가 잠시 후 자동으로 사라집니다.
+        접속 중인 모든 화면에 모달이 뜨고, 각자 확인 버튼을 눌러야 사라집니다.
       </Label>
     </>
   );

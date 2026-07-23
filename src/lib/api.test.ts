@@ -53,7 +53,7 @@ vi.mock("@/lib/supabase", () => ({
   },
 }));
 
-import { addScore, voidEntry, setTeamActive, setGameActive, createTeam, createGame, resetAll, setTeamGame, clearGame, setHideScores } from "@/lib/api";
+import { addScore, voidEntry, setTeamActive, setGameActive, createTeam, createGame, resetAll, setTeamGame, clearGame, setHideScores, sendAnnouncement } from "@/lib/api";
 
 beforeEach(() => {
   for (const k of Object.keys(calls)) delete calls[k];
@@ -173,5 +173,20 @@ describe("clearGame", () => {
   it("throws a Korean error on failure", async () => {
     rpcError = { message: "boom" };
     await expect(clearGame("g1")).rejects.toThrow("게임을 비우지 못했습니다.");
+  });
+});
+
+describe("sendAnnouncement", () => {
+  it("updates the announcement row with a fresh id and the message", async () => {
+    await sendAnnouncement("곧 시작합니다!");
+    const patch = calls["settings.update"] as { value: { id: string; message: string } };
+    expect(patch.value.message).toBe("곧 시작합니다!");
+    expect(typeof patch.value.id).toBe("string");
+    expect(patch.value.id.length).toBeGreaterThan(0);
+    expect(calls["settings.update.eq"]).toEqual(["key", "announcement"]);
+  });
+  it("throws a Korean error on failure (마이그레이션 전 행 없음 포함)", async () => {
+    updateError = { message: "boom" };
+    await expect(sendAnnouncement("x")).rejects.toThrow("알람을 보내지 못했습니다.");
   });
 });

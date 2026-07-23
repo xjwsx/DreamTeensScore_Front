@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { SettingsProvider } from "@/context/SettingsContext";
 import { RequireRole } from "@/components/RequireRole";
 import { AppLayout } from "@/components/AppLayout";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -25,6 +26,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <AuthGate>
+        <SettingsProvider>
         <Routes>
           <Route path="/" element={<Navigate to="/board" replace />} />
           <Route path="/login" element={<Login />} />
@@ -39,6 +41,7 @@ export default function App() {
           <Route path="/present" element={<RequireRole roles={["admin", "staff", "viewer"]}><Present /></RequireRole>} />
           <Route path="*" element={<Navigate to="/board" replace />} />
         </Routes>
+        </SettingsProvider>
         </AuthGate>
       </BrowserRouter>
     </AuthProvider>

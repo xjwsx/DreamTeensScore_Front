@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { BellRing } from "lucide-react";
-import { useSettings } from "@/hooks/useSettings";
+import { useSettings } from "@/context/SettingsContext";
 import { shouldShowAnnouncement } from "@/lib/announcement";
 
 // 자동 소멸까지의 시간(ms). 짧게 떴다 사라지는 일시적 알람.
@@ -10,7 +10,8 @@ const AUTO_DISMISS_MS = 3500;
 const Backdrop = styled.div`
   position: fixed;
   inset: 0;
-  z-index: 200;
+  /* ConfirmModal(150)보다 아래에 두어, 확인창이 떠 있을 때 알람이 그 위를 덮지 않게 한다. */
+  z-index: 140;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -76,10 +77,16 @@ export function AnnouncementModal() {
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
+  // 수동 닫기 시 대기 중인 자동 소멸 타이머도 함께 정리한다(중복 실행 방지).
+  const dismiss = () => {
+    window.clearTimeout(timer.current);
+    setShownMsg(null);
+  };
+
   if (shownMsg === null) return null;
   return (
-    <Backdrop onClick={() => setShownMsg(null)}>
-      <Card onClick={() => setShownMsg(null)}>
+    <Backdrop onClick={dismiss}>
+      <Card onClick={dismiss}>
         <IconWrap><BellRing size={34} color="#fbbf24" /></IconWrap>
         <Msg>{shownMsg}</Msg>
       </Card>

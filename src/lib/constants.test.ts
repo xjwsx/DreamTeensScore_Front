@@ -15,7 +15,7 @@ describe("constants", () => {
     expect(GAME_EMOJIS.length).toBeGreaterThan(0);
   });
   it("score units are positive and ascending", () => {
-    expect(SCORE_UNITS).toEqual([3, 5, 10]);
+    expect(SCORE_UNITS).toEqual([3, 5, 10, 20]);
     for (const u of SCORE_UNITS) expect(u).toBeGreaterThan(0);
   });
 });
